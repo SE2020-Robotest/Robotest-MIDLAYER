@@ -17,6 +17,34 @@ import rb_message.robot_client as msg_client
 
 class communicater:
 
+    def __init__(self):
+	self.init_ok = True
+        self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
+
+        rospy.init_node('communicater', anonymous = False)
+
+        rospy.Subscriber('send_rb_posi', posi, self.send_rb_posi)
+        rospy.Subscriber('send_rb_path_ori', path_ori, self.send_rb_path_ori)
+        rospy.Subscriber('send_rb_path', path, self.send_rb_path)
+        rospy.Subscriber('send_rb_voice_cmd', voice_cmd, self.send_rb_voice_cmd)
+
+	status = rospy.get_param("robot_status")
+	rospy.loginfo("Communicater: The robot_status now is %s.", status)
+
+        recive_srv = msg_server.RobotServicer(self.recive_map, self.recive_command, self.recive_voice)
+        try:
+            thread.start_new_thread(msg_server.serve, (recive_srv, ))
+	    rospy.loginfo("Communicater: Recieving service Initialized!")
+        except:
+	    rospy.logerr("Communicater: Error: unable to start the reciving service thread!")
+	    self.init_ok = False
+	
+        rospy.loginfo("Communicater: Communicate Nodes Initialized!")
+	return
+
+    def start(self):
+	rospy.spin()
+
     def send_rb_posi(self, msg):
 	'''
 	posi:
@@ -27,14 +55,15 @@ class communicater:
 	    float64 vy
 	    float64 angle
 	'''
+	rospy.loginfo("px = %s, py = %s,\nvx = %s, vy = %s,\nangle = %s, stamp = %s", msg.x, msg.y, msg.vx, msg.vy, msg.angle, msg.stamp)
 	try:
             msg_client.sendRBPosition("Ctrl", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
 	except Exception as e:
-	    rospy.logerr("Error: Cannot connect to Control port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Error: Cannot connect to Control port! Details:\n %s", e)
 	try:
             msg_client.sendRBPosition("AR", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
 	except Exception as e:
-	    rospy.logerr("Error: Cannot connect to AR port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Error: Cannot connect to AR port! Details:\n %s", e)
 
     def send_rb_path_ori(self, msg):
 	'''
@@ -52,7 +81,7 @@ class communicater:
 	try:
 	    msg_client.sendRBPath("Ctrl", path, msg.start_time, msg.end_time)
 	except Exception as e:
-	    rospy.logerr("Error: Cannot connect to Control port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Error: Cannot connect to Control port! Details:\n %s", e)
 
     def send_rb_path(self, msg):
         '''
@@ -68,7 +97,7 @@ class communicater:
 	try:
 	    msg_client.sendRBPath("Ctrl", path)
 	except Exception as e:
-	    rospy.logerr("Error: Cannot connect to Control port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Error: Cannot connect to Control port! Details:\n %s", e)
 
     def send_rb_voice_cmd(self, msg):
         '''
@@ -79,11 +108,11 @@ class communicater:
 	try:
 	    msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
 	except Exception as e:
-	    rospy.logerr("Error: Cannot connect to Control port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Error: Cannot connect to Control port! Details:\n %s", e)
 	try:
 	    msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
 	except Exception as e:
-	    rospy.logerr("Error: Cannot connect to AR port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Error: Cannot connect to AR port! Details:\n %s", e)
 
     def recive_map(self, request, context):
 	"Handling message 'map' from control_port"
@@ -101,10 +130,10 @@ class communicater:
 	'''
 	status = rospy.get_param("robot_status")
 	if status == "no_exp":
-	    rospy.logerr("Error: Cannot init the map. The Exp hasn't started yet!")
+	    rospy.logerr("Communicater: Error: Cannot init the map. The Exp hasn't started yet!")
 	    return 0
 	elif status != "exp_initializing":
-	    rospy.logerr("Error: Cannot init the map. There is an Exp running now!")
+	    rospy.logerr("Communicater: Error: Cannot init the map. There is an Exp running now!")
 	    return 0
 	obj = []
 	for block in request.blocks:
@@ -119,14 +148,14 @@ class communicater:
 	    if status == "no_exp":
 		rospy.set_param("robot_status", "exp_initializing")
 	    else:
-		rospy.logerr("Error: Cannot start now. There is an Exp running now!")
+		rospy.logerr("Communicater: Error: Cannot start now. There is an Exp running now!")
 	elif cmd == 1:
 	    if status == "experimenting":
 		rospy.set_param("robot_status", "exp_stopping")
 	    elif status == "exp_stoping":
-		rospy.logerr("Error: Cannot stop the Exp. The Exp is stopping now!")
+		rospy.logerr("Communicater: Error: Cannot stop the Exp. The Exp is stopping now!")
 	    else:
-		rospy.logerr("Error: Cannot stop the Exp. The Exp hasn't started yet!")
+		rospy.logerr("Communicater: Error: Cannot stop the Exp. The Exp hasn't started yet!")
 	elif cmd == 2:
 	    pass # build connect
 	else:
@@ -137,37 +166,13 @@ class communicater:
 	
         return 0
 
-    def __init__(self):
-        self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
-
-        rospy.init_node('communicater', anonymous = False)
-        rospy.loginfo("Nodes Initialized!")
-
-        rospy.Subscriber('send_rb_posi', posi, self.send_rb_posi)
-        rospy.Subscriber('send_rb_path_ori', path_ori, self.send_rb_path_ori)
-        rospy.Subscriber('send_rb_path', path, self.send_rb_path)
-        rospy.Subscriber('send_rb_voice_cmd', voice_cmd, self.send_rb_voice_cmd)
-	rospy.loginfo("Subscribe topics successfully!")
-
-	status = rospy.get_param("robot_status")
-	rospy.loginfo("The robot_status now is %s.", status)
-
-        recive_srv = msg_server.RobotServicer(self.recive_map, self.recive_command, self.recive_voice)
-        try:
-            thread.start_new_thread(msg_server.serve, (recive_srv, ))
-	    rospy.loginfo("Services Initialized!")
-        except:
-	    rospy.logerr("Error: unable to start the reciving service thread!")
-	return
         
 
 
 if __name__ == '__main__':
     try:
 	comm = communicater()
-        rate = rospy.Rate(10)
-	while not rospy.is_shutdown():
-	    rate.sleep()
-        thread.exit()
+	if comm.init_ok:
+	    comm.start()
     except rospy.ROSInterruptException:
 	pass

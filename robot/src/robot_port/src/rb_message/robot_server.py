@@ -2,7 +2,7 @@
 '''
 Author: ou yang xu jian
 Date: 2020-11-23 21:44:44
-LastEditTime: 2020-11-26 12:47:22
+LastEditTime: 2020-11-27 12:32:10
 LastEditors: Please set LastEditors
 Description: In User Settings Edit
 FilePath: \se2020\communication\robot_server.py
@@ -24,9 +24,9 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
     def __init__(self, reciveMap, reciveCommand, reciveVoice):
         self.reciveMap = reciveMap
-	self.reciveCommand = reciveCommand
-	self.reciveVoice = reciveVoice
-	return
+        self.reciveCommand = reciveCommand
+        self.reciveVoice = reciveVoice
+        return
 
     def ConfigMap(self, request, context):
         '''
@@ -45,13 +45,13 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
         print("Room Width: {}".format(width))
         print("Room Heigth: {}".format(height))
         for block in blocks:
-            print("Type: {}, W: {}, H: {}".format(
-                block.type, block.w, block.h))
+            print("Type: {}, W: {}, H: {}, Pos x: {}, Pos y: {}".format(
+                block.type, block.w, block.h, block.pos.posx, block.pos.posy))
 
         # if the reqeust message goes wrong, please modify the status to 1
-	if self.reciveMap is not None:
-	    return msg_pb2.Response(status=self.reciveMap(request, context))
-	else:
+        if self.reciveMap is not None:
+            return msg_pb2.Response(status=self.reciveMap(request, context))
+        else:
             return msg_pb2.Response(status=0)
 
     def ControlCommand(self, request, context):
@@ -76,8 +76,8 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveCommand is not None:
-	    return msg_pb2.Response(status=self.reciveCommand(request, context))
-	else:
+            return msg_pb2.Response(status=self.reciveCommand(request, context))
+        else:
             return msg_pb2.Response(status=0)
 
     def SendVoiceFile(self, request_iterator, context):
@@ -105,8 +105,8 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
             print(bytestr.file)
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveVoice is not None:
-	    return msg_pb2.Response(status=self.reciveVoice(request_iterator, context))
-	else:
+            return msg_pb2.Response(status=self.reciveVoice(request_iterator, context))
+        else:
             return msg_pb2.Response(status=0)
 
     """

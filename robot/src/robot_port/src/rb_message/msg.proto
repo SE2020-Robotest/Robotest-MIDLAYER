@@ -48,6 +48,7 @@ message Block{
     // if type is cylinder, the w means radius, h means height.
     double w = 2;
     double h = 3;
+	Point pos = 4;
 }
 
 message Map{

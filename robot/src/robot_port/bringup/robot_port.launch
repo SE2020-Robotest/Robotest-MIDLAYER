@@ -1,5 +1,7 @@
 <launch>
     <param name="robot_status" value="no_exp"/>
+    <param name="exp_status" value="waiting"/>
 
     <node pkg="robot_port" name="communicater" type="communicater.py" output="screen"/>
+    <node pkg="robot_port" name="posi_publisher" type="posi_publisher.py" output="screen"/>
 </launch>

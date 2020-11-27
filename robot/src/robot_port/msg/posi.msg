@@ -1,5 +1,6 @@
-float32 x
-float32 y
-float32 vx
-float32 vy
-float32 angel
+int32 stamp
+float64 x
+float64 y
+float64 vx
+float64 vy
+float64 angle

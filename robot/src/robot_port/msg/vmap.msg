@@ -1,3 +1,3 @@
-float32 w
-float32 h
+float64 w
+float64 h
 map_object[] obj

@@ -51,7 +51,7 @@ def sendRBPosition(receiver, point, angle, velocity, timestamp):
     return {int} feedback response status
     '''
     address = getAddr(receiver)
-    print("send robot position to " + address)
+    print("send robot position to " + receiver + ": " + address)
     channel = grpc.insecure_channel(address)
     stub = msg_pb2_grpc.MsgServicesStub(channel)
     PointPos = msg_pb2.Point(posx=point[0], posy=point[1])
@@ -77,7 +77,7 @@ def sendRBPath(receiver, robotpath, starttime=0, endtime=0):
     return {int} feedback response status
     '''
     address = getAddr(receiver)
-    print("send robot path to " + address)
+    print("send robot path to " + receiver + ": " + address)
     channel = grpc.insecure_channel(address)
     stub = msg_pb2_grpc.MsgServicesStub(channel)
     path = msg_pb2.RBPath()
@@ -101,7 +101,7 @@ def sendVoiceResult(receiver, voiceresult, timestamp):
     return {int} feedback response status
     '''
     address = getAddr(receiver)
-    print("send robot path to " + address)
+    print("send robot path to " + receiver + ": " + address)
     channel = grpc.insecure_channel(address)
     stub = msg_pb2_grpc.MsgServicesStub(channel)
     resultmsg = msg_pb2.VoiceStr(voice=voiceresult, timestamp=timestamp)
@@ -117,7 +117,7 @@ def sendRobotFinishedMsg(receiver):
     return {int} feedback response status
     '''
     address = getAddr(receiver)
-    print("send robot path to " + address)
+    print("send robot path to " + receiver + ": " + address)
     channel = grpc.insecure_channel(address)
     stub = msg_pb2_grpc.MsgServicesStub(channel)
     resultmsg = msg_pb2.Response(status=2)

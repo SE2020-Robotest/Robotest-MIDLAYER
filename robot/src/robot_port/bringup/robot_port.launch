@@ -1,0 +1,5 @@
+<launch>
+    <param name="robot_status" value="no_exp"/>
+
+    <node pkg="robot_port" name="communicater" type="communicater.py" output="screen"/>
+</launch>

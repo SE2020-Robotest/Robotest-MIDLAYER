@@ -23,6 +23,9 @@ Port = 8888
 class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
     def __init__(self, reciveMap, reciveCommand, reciveVoice):
+	      '''
+	      The following are callback function for handling the message
+	      '''
         self.reciveMap = reciveMap
         self.reciveCommand = reciveCommand
         self.reciveVoice = reciveVoice
@@ -50,7 +53,7 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveMap is not None:
-            return msg_pb2.Response(status=self.reciveMap(request, context))
+            return msg_pb2.Response(status=self.reciveMap(request, context)) # The Callback function
         else:
             return msg_pb2.Response(status=0)
 
@@ -76,7 +79,7 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveCommand is not None:
-            return msg_pb2.Response(status=self.reciveCommand(request, context))
+            return msg_pb2.Response(status=self.reciveCommand(request, context)) # The Callback function
         else:
             return msg_pb2.Response(status=0)
 
@@ -105,7 +108,7 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
             print(bytestr.file)
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveVoice is not None:
-            return msg_pb2.Response(status=self.reciveVoice(request_iterator, context))
+            return msg_pb2.Response(status=self.reciveVoice(request_iterator, context)) # The Callback function
         else:
             return msg_pb2.Response(status=0)
 

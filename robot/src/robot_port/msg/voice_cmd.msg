@@ -1,2 +1,2 @@
-time stamp
+int32 stamp
 string cmd

@@ -1,5 +1,5 @@
 bool type
-float32 x
-float32 y
-float32 w
-float32 h
+float64 x
+float64 y
+float64 w
+float64 h

@@ -2,9 +2,7 @@
 
 
 import rospy
-from tf.transformations import euler_from_quaternion  
-import math
-from nav_msgs.msg import Odometry
+import trans
 from robot_port.msg import posi
 
 '''
@@ -23,18 +21,19 @@ def pub():
 
     while not rospy.is_shutdown():
 	status = rospy.get_param("robot_status")
-	try:
-	    msg = rospy.wait_for_message('/odom', Odometry)
-	    rospy.loginfo("Got the posi!")
-	except rospy.ROSInterruptException:
-	    break
-	if status == "no_exp":
-	    (r, p, y) = euler_from_quaternion([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, \
-								msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
-	    
-	    posi_pub.publish(msg.header.stamp.secs, msg.pose.pose.position.x, msg.pose.pose.position.y, msg.twist.twist.linear.x, \
-			    msg.twist.twist.linear.y, y)
-	rospy.sleep(1)
+	if status == "experimenting":
+	    try:
+	        msg = trans.get_msg()
+	        p = trans.get_pose(msg)
+	    except rospy.ROSInterruptException:
+		return
+	    except rospy.exceptions.ROSException as e:
+		rospy.logerr("Posi_publisher: Cannot get the position!\nDetails: %s", e)
+		rospy.loginfo("Posi_publisher: Wait 10 seconds")
+		rospy.sleep(10)
+		continue
+	    posi_pub.publish(msg.header.stamp.secs, p[0], p[1], p[2], p[3], p[4])
+	rospy.sleep(5)
 
 if __name__ == '__main__':
     pub()

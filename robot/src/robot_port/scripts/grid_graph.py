@@ -1,12 +1,20 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 '''
-The origin point is on the top-left, and unit is cm
+The origin point is on the bottom-left, and unit is cm
+
+i          y
+|          |
+|       &  |
+|_____ j   |_____ x
+
+This is the corresbonding relation between grid_graph and virtual_map
 '''
 
 from enum import Enum
 
-r_robot = 5
+r_robot = 5.0 # Radius of robot
 delta = 10 # grid size
 INT_MAX = 0xfffffff
 
@@ -22,7 +30,7 @@ class grid_graph:
         self.N = self.w * self.h
         self.v = [[v_type.empt]*self.w for i in range(self.h)]
         self.finished = False;
-        return super().__init__()
+        return
 
     def is_inside(self, i, j):
         "Determine whether i,j is in the graph"
@@ -51,7 +59,7 @@ class grid_graph:
         if i + 1 < self.h and self.v[i + 1][j] == v_type.empt : v_nb.append(self.index1(i + 1, j))
         return v_nb
 
-    def nbr(self, k):
+    def nbr2(self, k):
         a = self.index2(k)
         return self.nbr(a[0], a[1])
 
@@ -89,6 +97,7 @@ class grid_graph:
 
     def finish(self):
         self.finished = True
+	self.prt_map()
         return
 
     def correct_point(self, i, j):
@@ -147,7 +156,7 @@ class grid_graph:
             del active[p_min]
             if mark == self.index1(qi, qj):
                 break
-            for i in self.nbr(mark):
+            for i in self.nbr2(mark):
                 if dis[i] == INT_MAX:
                     active.append(i)
                 dis[i] = min(dis[i], dis[mark] + 1)
@@ -157,13 +166,39 @@ class grid_graph:
         len = dis[v_path]
         path.append(self.index2(v_path))
         for cur_len in range(len - 1, 0, -1):
-            for k in self.nbr(v_path):
+            for k in self.nbr2(v_path):
                 if dis[k] == cur_len:
                     v_path = k
                     path.append(self.index2(v_path))
                     break
         path.reverse()
+	self.prt_path(path)
         return path
+
+    def prt_map(self):
+	str = ["○", "●"]
+        print "\n"
+    	for i in range(m.h):
+            for j in range(m.w):
+                print str[self.v[i][j].value],
+            print "\n",
+        print "\n"
+
+    def prt_path(self, path):
+	str = ["○", "●", "▼"]
+	v = [[0]*m.w for i in range(m.h)]
+        for i in range(m.h):
+            for j in range(m.w):
+                v[i][j] = m.v[i][j].value
+	for p in path:
+            v[p[0]][p[1]] = 2;
+        print "\n"
+    	for i in range(m.h):
+            for j in range(m.w):
+                print str[v[i][j]],
+            print "\n",
+        print "\n"
+
 
 if __name__ == '__main__':
     # Test
@@ -186,7 +221,7 @@ if __name__ == '__main__':
         tmp[p[0]][p[1]] = 2;
     for i in range(m.h):
         for j in range(m.w):
-            print(str[tmp[i][j]], end = '')
-        print("\n", end = '')
+            print str[tmp[i][j]],
+        print "\n",
     print("\n")
 

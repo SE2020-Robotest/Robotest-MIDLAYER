@@ -39,7 +39,7 @@ class communicater:
 	    rospy.logerr("Communicater: Error: unable to start the reciving service thread!")
 	    self.init_ok = False
 	
-        rospy.loginfo("Communicater: Communicate Nodes Initialized!")
+        rospy.loginfo("Communicater: Communicate Node Initialized!")
 	return
 
     def start(self):
@@ -55,7 +55,7 @@ class communicater:
 	    float64 vy
 	    float64 angle
 	'''
-	rospy.loginfo("px = %s, py = %s,\nvx = %s, vy = %s,\nangle = %s, stamp = %s", msg.x, msg.y, msg.vx, msg.vy, msg.angle, msg.stamp)
+	rospy.loginfo("\nCommunicater: px = %s, py = %s,\nvx = %s, vy = %s,\nangle = %s, stamp = %s", msg.x, msg.y, msg.vx, msg.vy, msg.angle, msg.stamp)
 	try:
             msg_client.sendRBPosition("Ctrl", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
 	except Exception as e:

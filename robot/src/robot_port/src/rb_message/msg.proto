@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package="msg.grpc";
+package msg;
+
+message Point{
+    double posx = 1;
+    double posy = 2;
+}
+
+// robot position
+message RBPosition{
+    Point pos = 1;
+    double angle = 2;
+    double vx = 3;
+    double vy = 4;
+    int32 timestamp = 5;
+}
+
+// robot path
+message RBPath{
+    repeated Point pos = 1;
+    int32 starttime = 2;
+    int32 endtime = 3;
+}
+
+// voice data, use stream to send
+message VoiceData{
+    bytes file = 1;
+}
+
+// voice recognition result
+message VoiceStr{
+    string voice = 1;
+    int32 timestamp = 2;
+}
+
+// virtual block
+message Block{
+    // block type
+    enum Type{
+       CUBE = 0;
+       CYLINDER = 1; 
+    }
+    Type type = 1;
+    // if type is cube, then w means width, h means height.
+    // if type is cylinder, the w means radius, h means height.
+    double w = 2;
+    double h = 3;
+	Point pos = 4;
+}
+
+message Map{
+    double roomwidth = 1;
+    double roomheight = 2;
+    repeated Block blocks = 3;
+}
+
+// control command
+message ControlCmd{
+    enum CtrlCmd{
+        START = 0;
+        STOP = 1;
+		CONNECT = 2;
+    }
+    CtrlCmd cmd = 1;
+}
+
+message Drive{
+    enum DriveCmd{
+        FRONT = 0;
+        BACK = 1;
+        LEFT = 2;
+        RIGHT = 3;
+        ROTATE = 4;
+    }
+    DriveCmd drivecmd = 1;
+}
+
+message Response{
+    enum Status{
+        OK = 0;
+        ERROR = 1;
+        FINISHED = 2;
+    }
+Status status = 1;
+}
+
+service MsgServices{
+    rpc ConfigMap (Map) returns (Response);
+    rpc RobotPosition(RBPosition) returns (Response);
+    rpc RobotPath(RBPath) returns (Response);
+    rpc SendVoiceFile(stream VoiceData) returns (Response);
+    rpc VoiceResult(VoiceStr) returns (Response);
+    rpc ControlCommand(ControlCmd) returns (Response);
+    rpc RobotFinished(Response) returns (Response);
+}

@@ -1,0 +1,11 @@
+<launch>
+    <param name="robot_status" value="no_exp"/>
+    <param name="exp_status" value="waiting"/>
+    <param name="robot_radius" value="10.0"/>
+    <param name="grid_size" value="10.0"/>
+
+    <node pkg="robot_port" name="communicater" type="communicater.py" output="screen"/>
+    <node pkg="robot_port" name="posi_publisher" type="posi_publisher.py" output="screen"/>
+    <node pkg="robot_port" name="navi_node" type="navi_node.py" output="screen"/>
+    <node pkg="robot_port" name="drive" type="drive.py" output="screen"/>
+</launch>

@@ -20,8 +20,8 @@ receiverAddr = {
         "Port": 8888
     },
     "Ctrl": {
-        "IP": "localhost",
-        "Port": 8888
+        "IP": "183.172.220.1",
+        "Port": 8889
     },
     "Robot": {
         "IP": "localhost",
@@ -51,7 +51,6 @@ def sendRBPosition(receiver, point, angle, velocity, timestamp):
     return {int} feedback response status
     '''
     address = getAddr(receiver)
-    print("send robot position to " + receiver + ": " + address)
     channel = grpc.insecure_channel(address)
     stub = msg_pb2_grpc.MsgServicesStub(channel)
     PointPos = msg_pb2.Point(posx=point[0], posy=point[1])
@@ -63,7 +62,6 @@ def sendRBPosition(receiver, point, angle, velocity, timestamp):
         timestamp=timestamp
     )
     response = stub.RobotPosition(RBPos)
-    print("Send Robot Position Feedback" + "{}".format(response.status))
     return response.status
 
 

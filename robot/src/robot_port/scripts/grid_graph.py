@@ -4,10 +4,10 @@
 '''
 The origin point is on the bottom-left, and unit is cm
 
-i          y
-|          |
-|       &  |
-|_____ j   |_____ x
+i           y
+|           |
+|        &  |
+|_____ j    |_____ x
 
 This is the corresbonding relation between grid_graph and virtual_map
 '''
@@ -69,12 +69,12 @@ class grid_graph:
             return
         w += r_robot
         h += r_robot
-        l = int(max((x - w) / delta, 0))
+        l = int(max((x - w / 2) / delta, 0))
         if delta * l < x - w: l += 1
-        r = int(min((x + w) / delta, self.w - 1))
-        u = int(max((y - h) / delta, 0))
+        r = int(min((x + w / 2) / delta, self.w - 1))
+        u = int(max((y - h / 2) / delta, 0))
         if delta * u < y - h: u += 1
-        d = int(min((y + h) / delta, self.h - 1))
+        d = int(min((y + h / 2) / delta, self.h - 1))
         for i in range(u, d + 1):       # i: rows
             for j in range(l, r + 1):   # j: columns
                 self.v[i][j] = v_type.full
@@ -86,9 +86,9 @@ class grid_graph:
             return
         rad += r_robot
         l = int(max((x - rad) / delta, 0))
-        r = int(min((x + rad) / delta, self.w))
+        r = int(min((x + rad) / delta, self.w - 1))
         u = int(max((y - rad) / delta, 0))
-        d = int(min((y + rad) / delta, self.h))
+        d = int(min((y + rad) / delta, self.h - 1))
         for i in range(u, d + 1):       # i: rows
             for j in range(l, r + 1):   # j: columns
                 if (j * delta - x)**2 + (i * delta - y)**2 <= rad**2 : # j for x-axes, i for y-axes
@@ -123,7 +123,7 @@ class grid_graph:
 	    	    return [i - l + k, j + k]
 
     def find_path(self, pi, pj, qi, qj):
-        "Use dijsktra algorithm to determine the shortest path for single origin"
+        "Use dijsktra algorithm to determine the shortest path for single origin. Return the path with unit cm"
         path = []
         if (not self.is_empt(pi, pj)) or (not self.is_empt(qi, qj)):
             return path
@@ -162,24 +162,27 @@ class grid_graph:
                 dis[i] = min(dis[i], dis[mark] + 1)
 
         # find the shortest path
-        v_path = self.index1(qi, qj)
-        len = dis[v_path]
-        path.append(self.index2(v_path))
-        for cur_len in range(len - 1, 0, -1):
-            for k in self.nbr2(v_path):
+        v_path = [qi, qj]
+        lenth = dis[self.index1(v_path[0], v_path[1])]
+	p = []
+        path.append([v_path[1]*delta, v_path[0]*delta])
+	p.append([v_path[0], v_path[1]])
+        for cur_len in range(lenth - 1, 0, -1):
+            for k in self.nbr(v_path[0], v_path[1]):
                 if dis[k] == cur_len:
-                    v_path = k
-                    path.append(self.index2(v_path))
+                    v_path = self.index2(k)
+        	    path.append([v_path[1]*delta, v_path[0]*delta])
+		    p.append([v_path[0], v_path[1]])
                     break
         path.reverse()
-	self.prt_path(path)
+	self.prt_path(p)
         return path
 
     def prt_map(self):
 	str = ["○", "●"]
         print "\n"
-    	for i in range(m.h):
-            for j in range(m.w):
+    	for i in range(self.h):
+            for j in range(self.w):
                 print str[self.v[i][j].value],
             print "\n",
         print "\n"
@@ -187,14 +190,14 @@ class grid_graph:
     def prt_path(self, path):
 	str = ["○", "●", "▼"]
 	v = [[0]*m.w for i in range(m.h)]
-        for i in range(m.h):
-            for j in range(m.w):
+        for i in range(self.h):
+            for j in range(self.w):
                 v[i][j] = m.v[i][j].value
 	for p in path:
             v[p[0]][p[1]] = 2;
         print "\n"
-    	for i in range(m.h):
-            for j in range(m.w):
+    	for i in range(self.h):
+            for j in range(self.w):
                 print str[v[i][j]],
             print "\n",
         print "\n"
@@ -207,21 +210,6 @@ if __name__ == '__main__':
     m.add_rect(123, 234, 50, 67)
     m.add_rect(323, 324, 45, 20)
     m.add_rect(423, 224, 100, 80)
-    
-    str = ["○", "●", "▼"]
-    v = [[0]*m.w for i in range(m.h)]
-    for i in range(m.h):
-        for j in range(m.w):
-            v[i][j] = m.v[i][j].value
-            #print(str[v[i][j]], end = '')
-        #print("\n", end = '')
-    print("\n")
-    tmp = v
-    for p in m.find_path(10, 40, 49, 49):
-        tmp[p[0]][p[1]] = 2;
-    for i in range(m.h):
-        for j in range(m.w):
-            print str[tmp[i][j]],
-        print "\n",
-    print("\n")
+    m.finish()
+    m.find_path(10, 40, 49, 49)
 

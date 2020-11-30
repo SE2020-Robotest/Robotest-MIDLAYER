@@ -7,6 +7,7 @@ from robot_port.msg import voice_cmd
 from robot_port.msg import path_ori
 from robot_port.msg import path
 from robot_port.msg import point_2d
+import status
 
 
 class fake_cmd:
@@ -23,7 +24,7 @@ class fake_cmd:
 	while not rospy.is_shutdown():
 	    s = raw_input("Input the fake command:")
 	    self.voice_pub.publish(rospy.Time.now().secs, s)
-	    if s == "通讯测试":
+	    if s == "test":
 		'''
 		path_ori:
 	    	    int32 start_time
@@ -38,9 +39,19 @@ class fake_cmd:
 		p = path([point_2d(0.0, 0.0), point_2d(20.0, 20.0), point_2d(50.0, 50.0)])
 		self.path_pub.publish(p)
 		self.path_ori_pub.publish(p_o)
+	    elif s == "spin":
+		s = "旋转"
+	    elif s == "stop spinning":
+		s = "停止旋转"
+	    elif s == "run exp":
+        	rospy.loginfo("Fake_cmd: Run the Exp! Set the %s to be '%s'.", status.rbs, status.rb.run)
+		rospy.set_param(status.rbs, status.rb.run)
 	    elif s == "start exp":
-        	rospy.loginfo("Fake_cmd: Start the Exp! Set the robot_status to be 'experimenting'.")
-		rospy.set_param("robot_status", "experimenting")
+        	rospy.loginfo("Fake_cmd: Initialize the Exp! Set the %s to be '%s'.", status.rbs, status.rb.init)
+		rospy.set_param(status.rbs, status.rb.init)
+	    elif s == "stop exp":
+        	rospy.loginfo("Fake_cmd: Stop the Exp! Set the %s to be '%s'.", status.rbs, status.rb.sleep)
+		rospy.set_param(status.rbs, status.rb.sleep)
 	return
 
 

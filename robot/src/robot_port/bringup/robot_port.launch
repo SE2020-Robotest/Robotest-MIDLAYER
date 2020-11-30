@@ -1,5 +1,5 @@
 <launch>
-    <param name="robot_status" value="no_exp"/>
+    <param name="robot_status" value="sleeping"/>
     <param name="exp_status" value="waiting"/>
     <param name="robot_radius" value="10.0"/>
     <param name="grid_size" value="10.0"/>

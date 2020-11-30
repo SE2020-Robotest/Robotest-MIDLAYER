@@ -73,7 +73,8 @@ message Drive{
         BACK = 1;
         LEFT = 2;
         RIGHT = 3;
-        ROTATE = 4;
+        CLOCKWISE = 4;
+		ANTICLOCKWISE = 5;
     }
     DriveCmd drivecmd = 1;
 }
@@ -95,4 +96,5 @@ service MsgServices{
     rpc VoiceResult(VoiceStr) returns (Response);
     rpc ControlCommand(ControlCmd) returns (Response);
     rpc RobotFinished(Response) returns (Response);
+	rpc DriveRobot(Drive) returns (Response);
 }

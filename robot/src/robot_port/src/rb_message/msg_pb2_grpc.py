@@ -49,6 +49,11 @@ class MsgServicesStub(object):
                 request_serializer=msg__pb2.Response.SerializeToString,
                 response_deserializer=msg__pb2.Response.FromString,
                 )
+        self.DriveRobot = channel.unary_unary(
+                '/msg.MsgServices/DriveRobot',
+                request_serializer=msg__pb2.Drive.SerializeToString,
+                response_deserializer=msg__pb2.Response.FromString,
+                )
 
 
 class MsgServicesServicer(object):
@@ -96,6 +101,12 @@ class MsgServicesServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def DriveRobot(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MsgServicesServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -132,6 +143,11 @@ def add_MsgServicesServicer_to_server(servicer, server):
             'RobotFinished': grpc.unary_unary_rpc_method_handler(
                     servicer.RobotFinished,
                     request_deserializer=msg__pb2.Response.FromString,
+                    response_serializer=msg__pb2.Response.SerializeToString,
+            ),
+            'DriveRobot': grpc.unary_unary_rpc_method_handler(
+                    servicer.DriveRobot,
+                    request_deserializer=msg__pb2.Drive.FromString,
                     response_serializer=msg__pb2.Response.SerializeToString,
             ),
     }
@@ -259,6 +275,23 @@ class MsgServices(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/msg.MsgServices/RobotFinished',
             msg__pb2.Response.SerializeToString,
+            msg__pb2.Response.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def DriveRobot(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/msg.MsgServices/DriveRobot',
+            msg__pb2.Drive.SerializeToString,
             msg__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

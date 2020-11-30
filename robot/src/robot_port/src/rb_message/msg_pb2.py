@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'\n\010msg.grpcP\001',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\tmsg.proto\x12\x03msg\"#\n\x05Point\x12\x0c\n\x04posx\x18\x01 \x01(\x01\x12\x0c\n\x04posy\x18\x02 \x01(\x01\"_\n\nRBPosition\x12\x17\n\x03pos\x18\x01 \x01(\x0b\x32\n.msg.Point\x12\r\n\x05\x61ngle\x18\x02 \x01(\x01\x12\n\n\x02vx\x18\x03 \x01(\x01\x12\n\n\x02vy\x18\x04 \x01(\x01\x12\x11\n\ttimestamp\x18\x05 \x01(\x05\"E\n\x06RBPath\x12\x17\n\x03pos\x18\x01 \x03(\x0b\x32\n.msg.Point\x12\x11\n\tstarttime\x18\x02 \x01(\x05\x12\x0f\n\x07\x65ndtime\x18\x03 \x01(\x05\"\x19\n\tVoiceData\x12\x0c\n\x04\x66ile\x18\x01 \x01(\x0c\",\n\x08VoiceStr\x12\r\n\x05voice\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x05\"u\n\x05\x42lock\x12\x1d\n\x04type\x18\x01 \x01(\x0e\x32\x0f.msg.Block.Type\x12\t\n\x01w\x18\x02 \x01(\x01\x12\t\n\x01h\x18\x03 \x01(\x01\x12\x17\n\x03pos\x18\x04 \x01(\x0b\x32\n.msg.Point\"\x1e\n\x04Type\x12\x08\n\x04\x43UBE\x10\x00\x12\x0c\n\x08\x43YLINDER\x10\x01\"H\n\x03Map\x12\x11\n\troomwidth\x18\x01 \x01(\x01\x12\x12\n\nroomheight\x18\x02 \x01(\x01\x12\x1a\n\x06\x62locks\x18\x03 \x03(\x0b\x32\n.msg.Block\"_\n\nControlCmd\x12$\n\x03\x63md\x18\x01 \x01(\x0e\x32\x17.msg.ControlCmd.CtrlCmd\"+\n\x07\x43trlCmd\x12\t\n\x05START\x10\x00\x12\x08\n\x04STOP\x10\x01\x12\x0b\n\x07\x43ONNECT\x10\x02\"p\n\x05\x44rive\x12%\n\x08\x64rivecmd\x18\x01 \x01(\x0e\x32\x13.msg.Drive.DriveCmd\"@\n\x08\x44riveCmd\x12\t\n\x05\x46RONT\x10\x00\x12\x08\n\x04\x42\x41\x43K\x10\x01\x12\x08\n\x04LEFT\x10\x02\x12\t\n\x05RIGHT\x10\x03\x12\n\n\x06ROTATE\x10\x04\"[\n\x08Response\x12$\n\x06status\x18\x01 \x01(\x0e\x32\x14.msg.Response.Status\")\n\x06Status\x12\x06\n\x02OK\x10\x00\x12\t\n\x05\x45RROR\x10\x01\x12\x0c\n\x08\x46INISHED\x10\x02\x32\xcd\x02\n\x0bMsgServices\x12$\n\tConfigMap\x12\x08.msg.Map\x1a\r.msg.Response\x12/\n\rRobotPosition\x12\x0f.msg.RBPosition\x1a\r.msg.Response\x12\'\n\tRobotPath\x12\x0b.msg.RBPath\x1a\r.msg.Response\x12\x30\n\rSendVoiceFile\x12\x0e.msg.VoiceData\x1a\r.msg.Response(\x01\x12+\n\x0bVoiceResult\x12\r.msg.VoiceStr\x1a\r.msg.Response\x12\x30\n\x0e\x43ontrolCommand\x12\x0f.msg.ControlCmd\x1a\r.msg.Response\x12-\n\rRobotFinished\x12\r.msg.Response\x1a\r.msg.ResponseB\x0c\n\x08msg.grpcP\x01\x62\x06proto3'
+  serialized_pb=b'\n\tmsg.proto\x12\x03msg\"#\n\x05Point\x12\x0c\n\x04posx\x18\x01 \x01(\x01\x12\x0c\n\x04posy\x18\x02 \x01(\x01\"_\n\nRBPosition\x12\x17\n\x03pos\x18\x01 \x01(\x0b\x32\n.msg.Point\x12\r\n\x05\x61ngle\x18\x02 \x01(\x01\x12\n\n\x02vx\x18\x03 \x01(\x01\x12\n\n\x02vy\x18\x04 \x01(\x01\x12\x11\n\ttimestamp\x18\x05 \x01(\x05\"E\n\x06RBPath\x12\x17\n\x03pos\x18\x01 \x03(\x0b\x32\n.msg.Point\x12\x11\n\tstarttime\x18\x02 \x01(\x05\x12\x0f\n\x07\x65ndtime\x18\x03 \x01(\x05\"\x19\n\tVoiceData\x12\x0c\n\x04\x66ile\x18\x01 \x01(\x0c\",\n\x08VoiceStr\x12\r\n\x05voice\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x05\"u\n\x05\x42lock\x12\x1d\n\x04type\x18\x01 \x01(\x0e\x32\x0f.msg.Block.Type\x12\t\n\x01w\x18\x02 \x01(\x01\x12\t\n\x01h\x18\x03 \x01(\x01\x12\x17\n\x03pos\x18\x04 \x01(\x0b\x32\n.msg.Point\"\x1e\n\x04Type\x12\x08\n\x04\x43UBE\x10\x00\x12\x0c\n\x08\x43YLINDER\x10\x01\"H\n\x03Map\x12\x11\n\troomwidth\x18\x01 \x01(\x01\x12\x12\n\nroomheight\x18\x02 \x01(\x01\x12\x1a\n\x06\x62locks\x18\x03 \x03(\x0b\x32\n.msg.Block\"_\n\nControlCmd\x12$\n\x03\x63md\x18\x01 \x01(\x0e\x32\x17.msg.ControlCmd.CtrlCmd\"+\n\x07\x43trlCmd\x12\t\n\x05START\x10\x00\x12\x08\n\x04STOP\x10\x01\x12\x0b\n\x07\x43ONNECT\x10\x02\"\x86\x01\n\x05\x44rive\x12%\n\x08\x64rivecmd\x18\x01 \x01(\x0e\x32\x13.msg.Drive.DriveCmd\"V\n\x08\x44riveCmd\x12\t\n\x05\x46RONT\x10\x00\x12\x08\n\x04\x42\x41\x43K\x10\x01\x12\x08\n\x04LEFT\x10\x02\x12\t\n\x05RIGHT\x10\x03\x12\r\n\tCLOCKWISE\x10\x04\x12\x11\n\rANTICLOCKWISE\x10\x05\"[\n\x08Response\x12$\n\x06status\x18\x01 \x01(\x0e\x32\x14.msg.Response.Status\")\n\x06Status\x12\x06\n\x02OK\x10\x00\x12\t\n\x05\x45RROR\x10\x01\x12\x0c\n\x08\x46INISHED\x10\x02\x32\xf6\x02\n\x0bMsgServices\x12$\n\tConfigMap\x12\x08.msg.Map\x1a\r.msg.Response\x12/\n\rRobotPosition\x12\x0f.msg.RBPosition\x1a\r.msg.Response\x12\'\n\tRobotPath\x12\x0b.msg.RBPath\x1a\r.msg.Response\x12\x30\n\rSendVoiceFile\x12\x0e.msg.VoiceData\x1a\r.msg.Response(\x01\x12+\n\x0bVoiceResult\x12\r.msg.VoiceStr\x1a\r.msg.Response\x12\x30\n\x0e\x43ontrolCommand\x12\x0f.msg.ControlCmd\x1a\r.msg.Response\x12-\n\rRobotFinished\x12\r.msg.Response\x1a\r.msg.Response\x12\'\n\nDriveRobot\x12\n.msg.Drive\x1a\r.msg.ResponseB\x0c\n\x08msg.grpcP\x01\x62\x06proto3'
 )
 
 
@@ -107,15 +107,20 @@ _DRIVE_DRIVECMD = _descriptor.EnumDescriptor(
       type=None,
       create_key=_descriptor._internal_create_key),
     _descriptor.EnumValueDescriptor(
-      name='ROTATE', index=4, number=4,
+      name='CLOCKWISE', index=4, number=4,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='ANTICLOCKWISE', index=5, number=5,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=634,
-  serialized_end=698,
+  serialized_start=635,
+  serialized_end=721,
 )
 _sym_db.RegisterEnumDescriptor(_DRIVE_DRIVECMD)
 
@@ -144,8 +149,8 @@ _RESPONSE_STATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=750,
-  serialized_end=791,
+  serialized_start=773,
+  serialized_end=814,
 )
 _sym_db.RegisterEnumDescriptor(_RESPONSE_STATUS)
 
@@ -527,8 +532,8 @@ _DRIVE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=586,
-  serialized_end=698,
+  serialized_start=587,
+  serialized_end=721,
 )
 
 
@@ -560,8 +565,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=700,
-  serialized_end=791,
+  serialized_start=723,
+  serialized_end=814,
 )
 
 _RBPOSITION.fields_by_name['pos'].message_type = _POINT
@@ -668,8 +673,8 @@ _MSGSERVICES = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=794,
-  serialized_end=1127,
+  serialized_start=817,
+  serialized_end=1191,
   methods=[
   _descriptor.MethodDescriptor(
     name='ConfigMap',
@@ -737,6 +742,16 @@ _MSGSERVICES = _descriptor.ServiceDescriptor(
     index=6,
     containing_service=None,
     input_type=_RESPONSE,
+    output_type=_RESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='DriveRobot',
+    full_name='msg.MsgServices.DriveRobot',
+    index=7,
+    containing_service=None,
+    input_type=_DRIVE,
     output_type=_RESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,

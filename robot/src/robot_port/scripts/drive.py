@@ -7,7 +7,7 @@ from robot_port.msg import voice_cmd
 
 class drive:
     def __init__(self):
-	self.move_pub = rospy.Publisher('cmd_vel', Twist, queue_size = 10)
+	self.move_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
 	self.is_spin = False
 	rospy.init_node('drive', anonymous = False)
         rospy.loginfo("Drive: Drive Node Initialized!")
@@ -22,20 +22,20 @@ class drive:
 	    string cmd
 	'''
 	cmd = msg.cmd
-	if cmd == "旋转":
+	if cmd == "spin":
 	    rospy.loginfo("Drive: Start Spinning!")
 	    self.is_spin = True
-	elif cmd == "停止旋转":
+	elif cmd == "stop spin":
 	    rospy.loginfo("Drive: Stop Spinning!")
 	    self.is_spin = False
 
     def spin(self):
 	move_cmd = Twist()
-	move_cmd.angular.z = 1
+	move_cmd.angular.z = 5
 	self.move_pub.publish(move_cmd)
 
     def start(self):
-	rate = rospy.Rate(1)
+	rate = rospy.Rate(10)
 	while not rospy.is_shutdown():
 	    if self.is_spin:
 		self.spin()

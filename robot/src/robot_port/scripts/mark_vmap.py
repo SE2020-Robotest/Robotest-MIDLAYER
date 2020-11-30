@@ -13,7 +13,7 @@ class vmap_coordinate:
 
     def mark(self):
         listener = tf.TransformListener()
-        listener.waitForTransform("/base_link", "/odom", rospy.Time(0),rospy.Duration(4.0))
+        listener.waitForTransform("/base_link", "/odom", rospy.Time(0),rospy.Duration(4.0)) # TODO: odom or map?
         [trans,rot] = listener.lookupTransform("/odom", "/base_link", rospy.Time(0))
         self.t = geometry_msgs.msg.TransformStamped()
         self.t.header.frame_id = 'odom'

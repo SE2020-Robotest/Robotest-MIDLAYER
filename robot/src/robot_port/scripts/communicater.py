@@ -3,6 +3,7 @@
 
 import thread
 import rospy
+from status import rb
 
 from std_msgs.msg import String
 from robot_port.msg import posi
@@ -18,7 +19,11 @@ import rb_message.robot_client as msg_client
 class communicater:
 
     def __init__(self):
+
+	# Members
 	self.init_ok = True
+	self.rb_s = rb()
+
         self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
 
         rospy.init_node('communicater', anonymous = False)
@@ -28,7 +33,7 @@ class communicater:
         rospy.Subscriber('send_rb_path', path, self.send_rb_path)
         rospy.Subscriber('send_rb_voice_cmd', voice_cmd, self.send_rb_voice_cmd)
 
-	status = rospy.get_param("robot_status")
+	status = self.rb_s.get_status()
 	rospy.loginfo("Communicater: The robot_status now is %s.", status)
 
         recive_srv = msg_server.RobotServicer(self.recive_map, self.recive_command, self.recive_voice)
@@ -36,7 +41,7 @@ class communicater:
             thread.start_new_thread(msg_server.serve, (recive_srv, ))
 	    rospy.loginfo("Communicater: Recieving service Initialized!")
         except:
-	    rospy.logerr("Communicater: Error: unable to start the reciving service thread!")
+	    rospy.logerr("Communicater: unable to start the reciving service thread!")
 	    self.init_ok = False
 	
         rospy.loginfo("Communicater: Communicate Node Initialized!")
@@ -55,15 +60,17 @@ class communicater:
 	    float64 vy
 	    float64 angle
 	'''
-	rospy.loginfo("\nCommunicater: px = %s, py = %s,\nvx = %s, vy = %s,\nangle = %s, stamp = %s", msg.x, msg.y, msg.vx, msg.vy, msg.angle, msg.stamp)
 	try:
             msg_client.sendRBPosition("Ctrl", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
 	except Exception as e:
-	    rospy.logerr("Communicater: Error: Cannot connect to Control port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
+	'''
 	try:
             msg_client.sendRBPosition("AR", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
 	except Exception as e:
-	    rospy.logerr("Communicater: Error: Cannot connect to AR port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Cannot connect to AR port! Details:\n %s", e)
+	'''
+	return
 
     def send_rb_path_ori(self, msg):
 	'''
@@ -81,7 +88,8 @@ class communicater:
 	try:
 	    msg_client.sendRBPath("Ctrl", path, msg.start_time, msg.end_time)
 	except Exception as e:
-	    rospy.logerr("Communicater: Error: Cannot connect to Control port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
+	return
 
     def send_rb_path(self, msg):
         '''
@@ -97,7 +105,8 @@ class communicater:
 	try:
 	    msg_client.sendRBPath("Ctrl", path)
 	except Exception as e:
-	    rospy.logerr("Communicater: Error: Cannot connect to Control port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
+	return
 
     def send_rb_voice_cmd(self, msg):
         '''
@@ -108,11 +117,12 @@ class communicater:
 	try:
 	    msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
 	except Exception as e:
-	    rospy.logerr("Communicater: Error: Cannot connect to Control port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
 	try:
 	    msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
 	except Exception as e:
-	    rospy.logerr("Communicater: Error: Cannot connect to AR port! Details:\n %s", e)
+	    rospy.logerr("Communicater: Cannot connect to AR port! Details:\n %s", e)
+	return
 
     def recive_map(self, request, context):
 	"Handling message 'map' from control_port"
@@ -128,34 +138,32 @@ class communicater:
 	    float32 h
 	    map_object[] obj
 	'''
-	status = rospy.get_param("robot_status")
-	if status == "no_exp":
-	    rospy.logerr("Communicater: Error: Cannot init the map. The Exp hasn't started yet!")
+	status = self.rb_s.get_status()
+	if status == rb.sleep:
+	    rospy.logerr("Communicater: Cannot init the map. The Exp hasn't started yet!")
 	    return 0
-	elif status != "exp_initializing":
-	    rospy.logerr("Communicater: Error: Cannot init the map. There is an Exp running now!")
+	elif status != rb.init:
+	    rospy.logerr("Communicater: Cannot init the map. There is an Exp running now!")
 	    return 0
 	obj = []
 	for block in request.blocks:
-	    obj.append(map_object(block.type == 1, block.x, block.y, block.w, block.h))
+	    obj.append(map_object(block.type, block.pos.posx, block.pos.posy, block.w, block.h))
 	self.map_pub.publish(request.roomwidth, request.roomheight, obj) # Pubilsh the map to topic 'virtual_map'
         return 0
 
     def recive_command(self, request, context):
-	status = rospy.get_param("robot_status")
+	status = self.rb_s.get_status()
 	cmd = request.cmd
-	if cmd == 0:
-	    if status == "no_exp":
-		rospy.set_param("robot_status", "exp_initializing")
+	if cmd == 0: # start the exp
+	    if status == rb.sleep:
+		self.rb_s.Start()
 	    else:
-		rospy.logerr("Communicater: Error: Cannot start now. There is an Exp running now!")
-	elif cmd == 1:
-	    if status == "experimenting":
-		rospy.set_param("robot_status", "exp_stopping")
-	    elif status == "exp_stoping":
-		rospy.logerr("Communicater: Error: Cannot stop the Exp. The Exp is stopping now!")
+		rospy.logerr("Communicater: Cannot start the Exp. There is an Exp running now!")
+	elif cmd == 1: # stop the exp
+	    if status != rb.sleep:
+		self.rb_s.Stop()
 	    else:
-		rospy.logerr("Communicater: Error: Cannot stop the Exp. The Exp hasn't started yet!")
+		rospy.logwarn("Communicater: Cannot stop the Exp. The Exp hasn't started yet!")
 	elif cmd == 2:
 	    pass # build connect
 	else:

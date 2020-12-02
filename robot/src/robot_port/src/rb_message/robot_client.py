@@ -108,7 +108,7 @@ def sendVoiceResult(receiver, voiceresult, timestamp):
     return response.status
 
 
-def sendRobotFinishedMsg(receiver):
+def sendResponseMsg(receiver, status):
     '''
     description: this function send the robot finished message to the receiver.
     param {str} receiver: the message's receiver
@@ -118,7 +118,7 @@ def sendRobotFinishedMsg(receiver):
     print("send robot path to " + receiver + ": " + address)
     channel = grpc.insecure_channel(address)
     stub = msg_pb2_grpc.MsgServicesStub(channel)
-    resultmsg = msg_pb2.Response(status=2)
+    resultmsg = msg_pb2.Response(status)
     response = stub.RobotFinished(resultmsg)
     print("Send Robot Finished Feedback" + "{}".format(response.status))
     return response.status

@@ -3,8 +3,8 @@
 
 import thread
 import rospy
-from status import rb
-
+from status import rb, exp
+from enum_list import *
 from std_msgs.msg import String
 from robot_port.msg import posi
 from robot_port.msg import path_ori
@@ -12,31 +12,36 @@ from robot_port.msg import path
 from robot_port.msg import voice_cmd
 from robot_port.msg import map_object
 from robot_port.msg import vmap
+from robot_port.msg import enum_type
 
 import rb_message.robot_server as msg_server
 import rb_message.robot_client as msg_client
 
+test_mode = True
+
 class communicater:
 
     def __init__(self):
+        rospy.init_node('communicater', anonymous = False)
 
 	# Members
 	self.init_ok = True
 	self.rb_s = rb()
+	self.exp_s = exp()
 
         self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
+        self.drive_pub = rospy.Publisher('drive_cmd', enum_type, queue_size = 10)
 
-        rospy.init_node('communicater', anonymous = False)
-
-        rospy.Subscriber('send_rb_posi', posi, self.send_rb_posi)
-        rospy.Subscriber('send_rb_path_ori', path_ori, self.send_rb_path_ori)
-        rospy.Subscriber('send_rb_path', path, self.send_rb_path)
-        rospy.Subscriber('send_rb_voice_cmd', voice_cmd, self.send_rb_voice_cmd)
+        rospy.Subscriber('posi_pub', posi, self.send_rb_posi)
+        rospy.Subscriber('path_ori', path_ori, self.send_rb_path_ori)
+        rospy.Subscriber('path', path, self.send_rb_path)
+        rospy.Subscriber('voice_cmd', voice_cmd, self.send_rb_voice_cmd)
+        rospy.Subscriber('response_to_ctrl', enum_type, self.send_response_to_ctrl)
 
 	status = self.rb_s.get_status()
 	rospy.loginfo("Communicater: The robot_status now is %s.", status)
 
-        recive_srv = msg_server.RobotServicer(self.recive_map, self.recive_command, self.recive_voice)
+        recive_srv = msg_server.RobotServicer(self.recive_map, self.recive_command, self.recive_voice, self.recive_drive_command)
         try:
             thread.start_new_thread(msg_server.serve, (recive_srv, ))
 	    rospy.loginfo("Communicater: Recieving service Initialized!")
@@ -60,6 +65,8 @@ class communicater:
 	    float64 vy
 	    float64 angle
 	'''
+	if test_mode:
+	    return
 	try:
             msg_client.sendRBPosition("Ctrl", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
 	except Exception as e:
@@ -82,6 +89,8 @@ class communicater:
 	    float64 x
 	    float64 y
 	'''
+	if test_mode:
+	    return
 	path = []
 	for p in msg.p:
 	    path.append([p.x, p.y])
@@ -99,6 +108,8 @@ class communicater:
 	    float64 x
 	    float64 y
 	'''
+	if test_mode:
+	    return
 	path = []
 	for p in msg.p:
 	    path.append([p.x, p.y])
@@ -114,6 +125,8 @@ class communicater:
 	    int32 stamp
 	    string cmd
 	'''
+	if test_mode:
+	    return
 	try:
 	    msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
 	except Exception as e:
@@ -122,6 +135,20 @@ class communicater:
 	    msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
 	except Exception as e:
 	    rospy.logerr("Communicater: Cannot connect to AR port! Details:\n %s", e)
+	return
+
+    def send_response_to_ctrl(self, msg):
+        '''
+	voice_cmd:
+	    int32 stamp
+	    string cmd
+	'''
+	if test_mode:
+	    return
+	try:
+	    msg_client.sendResponseMsg("Ctrl", msg.type)
+	except Exception as e:
+	    rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
 	return
 
     def recive_map(self, request, context):
@@ -154,20 +181,28 @@ class communicater:
     def recive_command(self, request, context):
 	status = self.rb_s.get_status()
 	cmd = request.cmd
-	if cmd == 0: # start the exp
+	if cmd == START: # start the exp
 	    if status == rb.sleep:
 		self.rb_s.Start()
 	    else:
 		rospy.logerr("Communicater: Cannot start the Exp. There is an Exp running now!")
-	elif cmd == 1: # stop the exp
+	elif cmd == STOP: # stop the exp
 	    if status != rb.sleep:
+		self.exp_s.wait()
 		self.rb_s.Stop()
 	    else:
 		rospy.logwarn("Communicater: Cannot stop the Exp. The Exp hasn't started yet!")
-	elif cmd == 2:
+	elif cmd == CONNECT:
 	    pass # build connect
 	else:
 	    return 1
+        return 0
+
+    def recive_drive_command(self, request, context):
+	cmd = request.drivecmd
+	if self.rb_s.get_status() == rb.run and self.exp_s.get_status() == exp.move:
+	    return
+	self.drive_pub.publish(cmd)
         return 0
 
     def recive_voice(self, request_iterator, context):

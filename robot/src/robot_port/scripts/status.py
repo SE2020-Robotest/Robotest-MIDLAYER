@@ -5,8 +5,6 @@ from rospy import get_param as get_s, set_param as set_s
 
 
 rbs = "robot_status"
-
-
 exps = "exp_status"
 
 class rb:

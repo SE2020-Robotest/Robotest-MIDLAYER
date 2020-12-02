@@ -12,11 +12,14 @@ i           y
 This is the corresbonding relation between grid_graph and virtual_map
 '''
 
+from rospy import logwarn
 from enum import Enum
+from math import sqrt
 
 r_robot = 5.0 # Radius of robot
 delta = 10 # grid size
-INT_MAX = 0xfffffff
+DIST_MAX = 9999.0
+eps = 1e-4
 
 class v_type(Enum):
     empt = 0
@@ -53,15 +56,27 @@ class grid_graph:
         "Return the neighbour of vertex whose status is empty. if the status of v[i][j] is not empty, then the neighbour is empty"
         v_nb = []
         if not self.is_empt(i, j) : return v_nb
-        if j + 1 < self.w and self.v[i][j + 1] == v_type.empt : v_nb.append(self.index1(i, j + 1))
-        if i - 1 >= 0 and self.v[i - 1][j] == v_type.empt : v_nb.append(self.index1(i - 1, j))
-        if j - 1 >= 0 and self.v[i][j - 1] == v_type.empt : v_nb.append(self.index1(i, j - 1))
-        if i + 1 < self.h and self.v[i + 1][j] == v_type.empt : v_nb.append(self.index1(i + 1, j))
+        if self.is_empt(i, j + 1) : v_nb.append(self.index1(i, j + 1))
+        if self.is_empt(i + 1, j + 1) : v_nb.append(self.index1(i + 1, j + 1))
+        if self.is_empt(i + 1, j) : v_nb.append(self.index1(i + 1, j))
+        if self.is_empt(i + 1, j - 1) : v_nb.append(self.index1(i + 1, j - 1))
+        if self.is_empt(i, j - 1) : v_nb.append(self.index1(i, j - 1))
+        if self.is_empt(i - 1, j - 1) : v_nb.append(self.index1(i - 1, j - 1))
+        if self.is_empt(i - 1, j) : v_nb.append(self.index1(i - 1, j))
+        if self.is_empt(i - 1, j + 1) : v_nb.append(self.index1(i - 1, j + 1))
         return v_nb
 
     def nbr2(self, k):
         a = self.index2(k)
         return self.nbr(a[0], a[1])
+
+    def dist(self, k, l):
+	a = self.index2(k)
+	b = self.index2(l)
+	return sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
+
+    def dist2(self, a, b):
+	return sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
     def add_rect(self, x, y, w, h):
         "Parameters' type are float (cm)"
@@ -100,7 +115,7 @@ class grid_graph:
 	self.prt_map()
         return
 
-    def correct_point(self, i, j):
+    def correct_point_index(self, i, j):
 	if i < 0:
 	    i = 0
 	elif i >= self.h:
@@ -122,8 +137,48 @@ class grid_graph:
 		elif self.is_empt(i - l + k, j + k):
 	    	    return [i - l + k, j + k]
 
-    def find_path(self, pi, pj, qi, qj):
-        "Use dijsktra algorithm to determine the shortest path for single origin. Return the path with unit cm"
+    def correct_point_coordinate(self, x, y):
+	j = int(x // delta)
+	i = int(y // delta)
+	[i, j] = self.correct_point_index(i, j)
+	return [j * delta, i * delta]
+
+    def is_empt_coordinate(self, x, y):
+	j = int(x // delta)
+	i = int(y // delta)
+	return self.is_empt(i, j)
+
+    def find_path(self, px, py, qx, qy):
+	pj = int(px // delta)
+	pi = int(py // delta)
+	qj = int(qx // delta)
+	qi = int(qy // delta)
+
+	# Correct the point
+	if not self.is_empt(pi, pj):
+	    [pi, pj] = self.correct_point_index(pi, pj) # correct the origin
+	    if __name__ == '__main__':
+	        print "Navi: The origin is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(px, py, pj * delta, pi * delta)
+	    else:
+		logwarn("Navi: The origin is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(px, py, pj * delta, pi * delta))
+	if not self.is_empt(qi, qj):
+	    [qi, qj] = self.correct_point_index(qi, qj) # correct the destination
+	    if __name__ == '__main__':
+	        print "Navi: The destination is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(qx, qy, qj * delta, qi * delta)
+	    else:
+		logwarn("Navi: The destination is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(qx, qy, qj * delta, qi * delta))
+	    qx = qj*delta
+	    qy = qi*delta
+
+	path = self.find_path_graph(pi, pj, qi, qj)
+	if len(path) == 0:
+	    return path
+	if (path[-1][0] - qx)**2 + (path[-1][1] - qy)**2 > eps**2:
+	    path.append([qx, qy]) # destination
+	return path
+
+    def find_path_graph(self, pi, pj, qi, qj):
+        "Use dijsktra algorithm to determine the shortest path for single origin. Input the index of vertex, and return the path with unit cm"
         path = []
         if (not self.is_empt(pi, pj)) or (not self.is_empt(qi, qj)):
             return path
@@ -134,14 +189,14 @@ class grid_graph:
                     v_st[self.index1(i, j)] = False
                 else:
                     v_st[self.index1(i, j)] = True
-        dis = [INT_MAX]*self.N
+        dis = [DIST_MAX]*self.N
         dis[self.index1(pi, pj)] = 0
         active = [self.index1(pi, pj)] # store the vertexes which have the estimation of distance but not sure(active vertexes)
 
         # Dijkstra algorithm
         for k in range(self.N):
             mark = -1
-            min_dis = INT_MAX
+            min_dis = DIST_MAX
             it = 0      # the index in active vertexes
             p_min = 0   # the index where achieve the minimum distance
             for i in active:
@@ -157,22 +212,32 @@ class grid_graph:
             if mark == self.index1(qi, qj):
                 break
             for i in self.nbr2(mark):
-                if dis[i] == INT_MAX:
+                if dis[i] == DIST_MAX:
                     active.append(i)
-                dis[i] = min(dis[i], dis[mark] + 1)
+                dis[i] = min(dis[i], dis[mark] + self.dist(i, mark))
 
         # find the shortest path
-        v_path = [qi, qj]
+        v_path = [qi, qj] # current vertex
         lenth = dis[self.index1(v_path[0], v_path[1])]
 	p = []
         path.append([v_path[1]*delta, v_path[0]*delta])
 	p.append([v_path[0], v_path[1]])
-        for cur_len in range(lenth - 1, 0, -1):
-            for k in self.nbr(v_path[0], v_path[1]):
-                if dis[k] == cur_len:
-                    v_path = self.index2(k)
-        	    path.append([v_path[1]*delta, v_path[0]*delta])
+	cur_len = dis[self.index1(qi, qj)]
+        while cur_len > 1e-12:
+	    if len(p) >= 2:
+		v_tmp = [2*p[-1][0] - p[-2][0], 2*p[-1][1] - p[-2][1]]
+		if self.is_empt(v_tmp[0], v_tmp[1]) and abs(cur_len - dis[self.index1(v_tmp[0], v_tmp[1])] - self.dist2(v_tmp, v_path)) < 1e-12:
+		    v_path = v_tmp
 		    p.append([v_path[0], v_path[1]])
+		    path[-1] = [v_path[1]*delta, v_path[0]*delta]
+		    cur_len = dis[self.index1(v_path[0], v_path[1])]
+		    continue
+            for k in self.nbr(v_path[0], v_path[1]):
+                if abs(cur_len - dis[k] - self.dist2(self.index2(k), v_path)) < 1e-12:
+                    v_path = self.index2(k)
+		    p.append([v_path[0], v_path[1]])
+        	    path.append([v_path[1]*delta, v_path[0]*delta])
+		    cur_len = dis[self.index1(v_path[0], v_path[1])]
                     break
         path.reverse()
 	self.prt_path(p)
@@ -183,22 +248,22 @@ class grid_graph:
         print "\n"
     	for i in range(self.h):
             for j in range(self.w):
-                print str[self.v[i][j].value],
+                print str[self.v[-i - 1][j].value],
             print "\n",
         print "\n"
 
     def prt_path(self, path):
 	str = ["○", "●", "▼"]
-	v = [[0]*m.w for i in range(m.h)]
+	v = [[0]*self.w for i in range(self.h)]
         for i in range(self.h):
             for j in range(self.w):
-                v[i][j] = m.v[i][j].value
+                v[i][j] = self.v[i][j].value
 	for p in path:
             v[p[0]][p[1]] = 2;
         print "\n"
     	for i in range(self.h):
             for j in range(self.w):
-                print str[v[i][j]],
+                print str[v[-i - 1][j]],
             print "\n",
         print "\n"
 
@@ -207,9 +272,12 @@ if __name__ == '__main__':
     # Test
     m = grid_graph(500, 500)
     m.add_circle(242, 313, 98)
-    m.add_rect(123, 234, 50, 67)
-    m.add_rect(323, 324, 45, 20)
-    m.add_rect(423, 224, 100, 80)
+    m.add_rect(123, 234, 100, 120)
+    m.add_rect(323, 324, 90, 40)
+    m.add_rect(423, 224, 200, 160)
+    m.add_circle(50, 50, 98)
     m.finish()
-    m.find_path(10, 40, 49, 49)
+    path = m.find_path(500, 100, 283, 413)
+    for p in path:
+	print p[0], p[1]
 

@@ -17,7 +17,7 @@ posi:
 '''
 
 def pub():
-    posi_pub = rospy.Publisher('send_rb_posi', posi, queue_size = 10)
+    posi_pub = rospy.Publisher('posi_pub', posi, queue_size = 10)
     rospy.init_node('posi_publisher', anonymous = False)
 
     rb_s = rb()
@@ -29,8 +29,6 @@ def pub():
 	    try:
 	        msg = tr.get_msg()
 	        p = tr.get_pose(msg)
-	    except rospy.ROSInterruptException:
-		return
 	    except rospy.exceptions.ROSException as e:
 		rospy.logerr("Posi_publisher: Cannot get the position!\nDetails: %s", e)
 		rospy.loginfo("Posi_publisher: Wait 10 seconds")
@@ -42,4 +40,7 @@ def pub():
 	    rospy.sleep(1)
 
 if __name__ == '__main__':
-    pub()
+    try:
+        pub()
+    except rospy.ROSInterruptException:
+	pass

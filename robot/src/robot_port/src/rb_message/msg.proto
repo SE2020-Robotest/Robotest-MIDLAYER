@@ -74,7 +74,7 @@ message Drive{
         LEFT = 2;
         RIGHT = 3;
         CLOCKWISE = 4;
-		ANTICLOCKWISE = 5;
+	ANTICLOCKWISE = 5;
     }
     DriveCmd drivecmd = 1;
 }

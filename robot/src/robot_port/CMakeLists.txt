@@ -57,6 +57,7 @@ add_message_files(
   path.msg
   map_object.msg
   vmap.msg
+  res.msg
 )
 
 ## Generate services in the 'srv' folder

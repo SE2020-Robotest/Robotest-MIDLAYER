@@ -17,7 +17,7 @@ posi:
 '''
 
 def pub():
-    posi_pub = rospy.Publisher('send_rb_posi', posi, queue_size = 10)
+    posi_pub = rospy.Publisher('posi_pub', posi, queue_size = 10)
     rospy.init_node('posi_publisher', anonymous = False)
 
     rb_s = rb()

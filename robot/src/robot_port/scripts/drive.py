@@ -12,7 +12,7 @@ class drive:
 	rospy.init_node('drive', anonymous = False)
         rospy.loginfo("Drive: Drive Node Initialized!")
 	
-	rospy.Subscriber('xfword', voice_cmd, self.recieve_voice)
+	rospy.Subscriber('voice_cmd', voice_cmd, self.recieve_voice)
 	return
 
     def recieve_voice(self, msg):
@@ -22,10 +22,10 @@ class drive:
 	    string cmd
 	'''
 	cmd = msg.cmd
-	if cmd == "spin":
+	if cmd == "旋转":
 	    rospy.loginfo("Drive: Start Spinning!")
 	    self.is_spin = True
-	elif cmd == "stop spin":
+	elif cmd == "停止旋转":
 	    rospy.loginfo("Drive: Stop Spinning!")
 	    self.is_spin = False
 

@@ -24,10 +24,10 @@ class trans:
     def normalize_angle(self, theta):
         if theta > pi:
     	    k = int(theta / (2*pi))
-	    theta -= (k + 1)*pi
+	    theta -= 2*(k + 1)*pi
         elif theta < -pi:
-	    k = int(-theta / (2*pi))
-	    theta += (k + 1)*pi
+	    k = int((-theta) / (2*pi))
+	    theta += 2*(k + 1)*pi
         return theta
 
     def quat_to_angle(self, quat):

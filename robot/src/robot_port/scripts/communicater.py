@@ -12,7 +12,7 @@ from robot_port.msg import path
 from robot_port.msg import voice_cmd
 from robot_port.msg import map_object
 from robot_port.msg import vmap
-from robot_port.msg import res
+from robot_port.msg import enum_type
 
 import rb_message.robot_server as msg_server
 import rb_message.robot_client as msg_client
@@ -22,6 +22,7 @@ test_mode = True
 class communicater:
 
     def __init__(self):
+        rospy.init_node('communicater', anonymous = False)
 
 	# Members
 	self.init_ok = True
@@ -29,19 +30,18 @@ class communicater:
 	self.exp_s = exp()
 
         self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
-
-        rospy.init_node('communicater', anonymous = False)
+        self.drive_pub = rospy.Publisher('drive_cmd', enum_type, queue_size = 10)
 
         rospy.Subscriber('posi_pub', posi, self.send_rb_posi)
         rospy.Subscriber('path_ori', path_ori, self.send_rb_path_ori)
         rospy.Subscriber('path', path, self.send_rb_path)
         rospy.Subscriber('voice_cmd', voice_cmd, self.send_rb_voice_cmd)
-        rospy.Subscriber('response', res, self.send_response)
+        rospy.Subscriber('response_to_ctrl', enum_type, self.send_response_to_ctrl)
 
 	status = self.rb_s.get_status()
 	rospy.loginfo("Communicater: The robot_status now is %s.", status)
 
-        recive_srv = msg_server.RobotServicer(self.recive_map, self.recive_command, self.recive_voice)
+        recive_srv = msg_server.RobotServicer(self.recive_map, self.recive_command, self.recive_voice, self.recive_drive_command)
         try:
             thread.start_new_thread(msg_server.serve, (recive_srv, ))
 	    rospy.loginfo("Communicater: Recieving service Initialized!")
@@ -137,7 +137,7 @@ class communicater:
 	    rospy.logerr("Communicater: Cannot connect to AR port! Details:\n %s", e)
 	return
 
-    def send_response(self, msg):
+    def send_response_to_ctrl(self, msg):
         '''
 	voice_cmd:
 	    int32 stamp
@@ -146,13 +146,9 @@ class communicater:
 	if test_mode:
 	    return
 	try:
-	    msg_client.sendResponseMsg("Ctrl", msg.status)
+	    msg_client.sendResponseMsg("Ctrl", msg.type)
 	except Exception as e:
 	    rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
-	try:
-	    msg_client.sendResponseMsg("AR", msg.status)
-	except Exception as e:
-	    rospy.logerr("Communicater: Cannot connect to AR port! Details:\n %s", e)
 	return
 
     def recive_map(self, request, context):
@@ -200,6 +196,13 @@ class communicater:
 	    pass # build connect
 	else:
 	    return 1
+        return 0
+
+    def recive_drive_command(self, request, context):
+	cmd = request.drivecmd
+	if self.rb_s.get_status() == rb.run and self.exp_s.get_status() == exp.move:
+	    return
+	self.drive_pub.publish(cmd)
         return 0
 
     def recive_voice(self, request_iterator, context):

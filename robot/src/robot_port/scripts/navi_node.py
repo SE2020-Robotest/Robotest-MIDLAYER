@@ -18,7 +18,7 @@ from robot_port.msg import map_object
 from robot_port.msg import vmap
 from robot_port.msg import path
 from robot_port.msg import point_2d
-from robot_port.msg import res
+from robot_port.msg import enum_type
 
 '''
 The origin point is on the bottom-left, and unit is cm
@@ -32,12 +32,6 @@ This is the corresbonding relation between grid_graph and virtual_map
 '''
 
 
-
-eps_d = 0.5 # The tollerance
-eps_a = 0.2 # The tollerance
-max_l = 0.4
-max_a = 1
-
 class navi_method(Enum):
     cmd_vel = 0
     move_base_grid_graph = 1
@@ -47,20 +41,20 @@ cur_navi_method = navi_method.cmd_vel
 
 class navi_nodes:
     def __init__(self):
+	rospy.init_node('navi_node', anonymous = False)
+
 	self.map_loaded = False
 	self.g = None
 	self.rb_s = rb()
 	self.exp_s = exp()
+	self.trans = trans()
+        rospy.loginfo("Navi: Navigation Node Initialized!")
 
 	self.move_cmd_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 	self.path_pub = rospy.Publisher('path', path, queue_size = 10)
-	self.res_pub = rospy.Publisher('response', res, queue_size = 10)
+	self.res_to_ctrl_pub = rospy.Publisher('response_to_ctrl', enum_type, queue_size = 10)
 
-	rospy.init_node('navi_node', anonymous = False)
-        rospy.loginfo("Navi: Navigation Node Initialized!")
-
-	self.trans = trans()
 	rospy.Subscriber('virtual_map', vmap, self.load_map)
 	rospy.Subscriber('path', path, self.recieve_path)
 	rospy.Subscriber('dst', point_2d, self.recieve_dst)
@@ -70,6 +64,7 @@ class navi_nodes:
 	graph.r_robot = float(r)
 	graph.delta = d
 	graph.eps = eps_d
+
 	return
 
     def start(self):
@@ -103,8 +98,19 @@ class navi_nodes:
 	    elif obj.type == CUBE:
 		self.g.add_rect(obj.x, obj.y, obj.w, obj.h)
 	self.g.finish()
+	cur_p = self.trans.get_posi()
+	if not self.g.is_empt_coordinate(cur_p[0], cur_p[1]):
+	    rospy.logwarn("Navi: Current position in the virtual map is illegal!")
+	    p = self.g.correct_point_coordinate(cur_p[0], cur_p[1])
+	    rospy.loginfo("Navi: Automatically move to %s, %s", p[0], p[1])
+	    if not self.move_to_by_cmd_vel(p):
+		rospy.logerr("Navi: Cannot correct the position automatically!")
+		rospy.logerr("Navi: The Exp failed to initialize!")
+		self.rb_s.Stop()
+		self.res_to_ctrl_pub.publish(ERROR)
+		return
 	rospy.loginfo("Navi: Load the map successfully!")
-	self.res_pub.publish(FINISHED)
+	self.res_to_ctrl_pub.publish(FINISHED)
 	self.rb_s.Run()							# (Important!) Change the status
 	return
 
@@ -166,19 +172,20 @@ class navi_nodes:
 
 	# Move to the destination
 	rospy.loginfo("Navi: Start moving!")
-	self.move(path)
-
-	rospy.loginfo("Navi: Arrive at destination!")
+	if self.move(path):
+	    rospy.loginfo("Navi: Arrive at destination!")
+	else:
+	    rospy.logerr("Navi: Failed to achieve destination!")
 	self.exp_s.Wait() 						# (Important!) Change the status
 	return
 
     def move(self, path):
 	if cur_navi_method == navi_method.cmd_vel:
-	    self.move_by_cmd_vel(path)
+	    return self.move_by_cmd_vel(path)
 	elif cur_navi_method == navi_method.move_base_grid_graph:
-	    self.move_by_move_base_grid_graph(path)
+	    return self.move_by_move_base_grid_graph(path)
 	elif cur_navi_method == navi_method.move_base_map_server:
-	    self.move_by_move_base_map_server(path)
+	    return self.move_by_move_base_map_server(path)
 
     def move_by_cmd_vel(self, path):
 	for p in path:
@@ -193,15 +200,17 @@ class navi_nodes:
 	msg = self.trans.get_msg()
 	cur_p = self.trans.get_posi(msg)
 
-	rospy.loginfo("Navi: Rotate!")
+	print "Navi: Move to %s, %s"%(p[0], p[1])
+	print "Navi: Rotate!"
 
 	while True:
-	    if self.exp_s.get_status() != exp.move:
+	    if self.exp_s.get_status() != exp.move and self.rb_s.get_status() != rb.init:
 		return False
 	    msg = self.trans.get_msg()
 	    cur_angle = self.trans.get_angle(msg)
 	    angle = self.trans.normalize_angle(self.get_orientation(cur_p, p) - cur_angle)
 	    if abs(angle) < eps_a:
+	        self.move_cmd_pub.publish(Twist())
 		break
 	    linear = 0
 	    angular = 4 * angle
@@ -212,10 +221,10 @@ class navi_nodes:
 	    self.move_cmd_pub.publish(move_cmd)
 	    rate.sleep()
 
-	rospy.loginfo("Navi: Move!")
+	print "Navi: Move!"
 
 	while True:
-	    if self.exp_s.get_status() != exp.move:
+	    if self.exp_s.get_status() != exp.move and self.rb_s.get_status() != rb.init:
 		return False
 	    msg = self.trans.get_msg()
 	    cur_p = self.trans.get_posi(msg)
@@ -241,6 +250,7 @@ class navi_nodes:
 	    move_cmd.angular.z = angular
 	    self.move_cmd_pub.publish(move_cmd)
 	    rate.sleep()
+	print "Navi: Arrive at %s, %s"%(cur_p[0], cur_p[1])
 	return True
 
     def move_by_move_base_grid_graph(self, path):
@@ -292,5 +302,8 @@ class navi_nodes:
 
 
 if __name__ == '__main__':
-    navi = navi_nodes()
-    navi.start()
+    try:
+        navi = navi_nodes()
+        navi.start()
+    except rospy.ROSInterruptException:
+	pass

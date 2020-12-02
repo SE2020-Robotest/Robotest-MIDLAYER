@@ -27,7 +27,7 @@ class fake_cmd:
     def start(self):
 	while not rospy.is_shutdown():
 	    s = raw_input("Input the fake command:")
-	    if s == "test comm":
+	    if s == "comm test":
 		'''
 		path_ori:
 	    	    int32 start_time
@@ -92,5 +92,8 @@ class fake_cmd:
 
 
 if __name__ == '__main__':
-    f = fake_cmd()
-    f.start()
+    try:
+        f = fake_cmd()
+        f.start()
+    except rospy.ROSInterruptException:
+	pass

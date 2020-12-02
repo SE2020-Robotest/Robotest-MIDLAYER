@@ -22,13 +22,14 @@ Port = 8888
 
 class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
-    def __init__(self, reciveMap, reciveCommand, reciveVoice):
+    def __init__(self, reciveMap, reciveCommand, reciveVoice, reciveDriveCommand):
         '''
         The following are callback function for handling the message
         '''
         self.reciveMap = reciveMap
         self.reciveCommand = reciveCommand
         self.reciveVoice = reciveVoice
+        self.reciveDriveCommand = reciveDriveCommand
         return
 
     def ConfigMap(self, request, context):
@@ -136,7 +137,7 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
             print("Clockwise")
         elif cmd == 5:
             print("Anticlockwise")
-        return msg_pb2.Response(status=0)
+        return msg_pb2.Response(status=self.reciveDriveCommand(response, context))
 
     """
     def RobotPath(self, request, context):

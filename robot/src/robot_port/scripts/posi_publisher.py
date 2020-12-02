@@ -29,8 +29,6 @@ def pub():
 	    try:
 	        msg = tr.get_msg()
 	        p = tr.get_pose(msg)
-	    except rospy.ROSInterruptException:
-		return
 	    except rospy.exceptions.ROSException as e:
 		rospy.logerr("Posi_publisher: Cannot get the position!\nDetails: %s", e)
 		rospy.loginfo("Posi_publisher: Wait 10 seconds")
@@ -42,4 +40,7 @@ def pub():
 	    rospy.sleep(1)
 
 if __name__ == '__main__':
-    pub()
+    try:
+        pub()
+    except rospy.ROSInterruptException:
+	pass

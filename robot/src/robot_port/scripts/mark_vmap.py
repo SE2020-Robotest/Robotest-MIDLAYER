@@ -33,12 +33,12 @@ class vmap_coordinate:
 	rate = rospy.Rate(1)
     	while not rospy.is_shutdown():
 	    self.t.header.stamp = rospy.Time.now()
-	    try:
-                m.sendTransformMessage(self.t)
-	    except rospy.ROSInterruptException:
-		break
+            m.sendTransformMessage(self.t)
             rate.sleep()
 
 if __name__ == '__main__':  
-    vmap = vmap_coordinate()
-    vmap.start()
+    try:
+        vmap = vmap_coordinate()
+        vmap.start()
+    except rospy.ROSInterruptException:
+	pass

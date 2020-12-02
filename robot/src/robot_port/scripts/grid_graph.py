@@ -12,6 +12,7 @@ i           y
 This is the corresbonding relation between grid_graph and virtual_map
 '''
 
+from rospy import logwarn
 from enum import Enum
 from math import sqrt
 
@@ -114,7 +115,7 @@ class grid_graph:
 	self.prt_map()
         return
 
-    def correct_point(self, i, j):
+    def correct_point_index(self, i, j):
 	if i < 0:
 	    i = 0
 	elif i >= self.h:
@@ -136,6 +137,17 @@ class grid_graph:
 		elif self.is_empt(i - l + k, j + k):
 	    	    return [i - l + k, j + k]
 
+    def correct_point_coordinate(self, x, y):
+	j = int(x // delta)
+	i = int(y // delta)
+	[i, j] = self.correct_point_index(i, j)
+	return [j * delta, i * delta]
+
+    def is_empt_coordinate(self, x, y):
+	j = int(x // delta)
+	i = int(y // delta)
+	return self.is_empt(i, j)
+
     def find_path(self, px, py, qx, qy):
 	pj = int(px // delta)
 	pi = int(py // delta)
@@ -144,11 +156,17 @@ class grid_graph:
 
 	# Correct the point
 	if not self.is_empt(pi, pj):
-	    [pi, pj] = self.correct_point(pi, pj) # correct the origin
-	    print "Navi: The origin is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(px, py, pj*delta, pi*delta)
+	    [pi, pj] = self.correct_point_index(pi, pj) # correct the origin
+	    if __name__ == '__main__':
+	        print "Navi: The origin is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(px, py, pj * delta, pi * delta)
+	    else:
+		logwarn("Navi: The origin is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(px, py, pj * delta, pi * delta))
 	if not self.is_empt(qi, qj):
-	    [qi, qj] = self.correct_point(qi, qj) # correct the destination
-	    print "Navi: The destination is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(qx, qy, qj*delta, qi*delta)
+	    [qi, qj] = self.correct_point_index(qi, qj) # correct the destination
+	    if __name__ == '__main__':
+	        print "Navi: The destination is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(qx, qy, qj * delta, qi * delta)
+	    else:
+		logwarn("Navi: The destination is illegal!\nAutomatically correct it from [%s, %s] to [%s, %s]"%(qx, qy, qj * delta, qi * delta))
 	    qx = qj*delta
 	    qy = qi*delta
 

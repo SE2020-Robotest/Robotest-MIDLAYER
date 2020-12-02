@@ -2,7 +2,7 @@
 '''
 Author: ou yang xu jian
 Date: 2020-11-23 21:44:44
-LastEditTime: 2020-11-27 12:32:10
+LastEditTime: 2020-11-30 18:13:11
 LastEditors: Please set LastEditors
 Description: In User Settings Edit
 FilePath: \se2020\communication\robot_server.py
@@ -53,7 +53,8 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveMap is not None:
-            return msg_pb2.Response(status=self.reciveMap(request, context)) # The Callback function
+            # The Callback function
+            return msg_pb2.Response(status=self.reciveMap(request, context))
         else:
             return msg_pb2.Response(status=0)
 
@@ -79,7 +80,8 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveCommand is not None:
-            return msg_pb2.Response(status=self.reciveCommand(request, context)) # The Callback function
+            # The Callback function
+            return msg_pb2.Response(status=self.reciveCommand(request, context))
         else:
             return msg_pb2.Response(status=0)
 
@@ -108,9 +110,33 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
             print(bytestr.file)
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveVoice is not None:
-            return msg_pb2.Response(status=self.reciveVoice(request_iterator, context)) # The Callback function
+            # The Callback function
+            return msg_pb2.Response(status=self.reciveVoice(request_iterator, context))
         else:
             return msg_pb2.Response(status=0)
+
+    def DriveRobot(self, response, context):
+        '''
+        description: this function is the response function when the control server site sends drive robot message
+        param {*} self
+        param {Drive} response
+        param {*} context
+        return {Response}
+        '''
+        cmd = response.drivecmd
+        if cmd == 0:
+            print("Front")
+        elif cmd == 1:
+            print("Back")
+        elif cmd == 2:
+            print("Left")
+        elif cmd == 3:
+            print("Right")
+        elif cmd == 4:
+            print("Clockwise")
+        elif cmd == 5:
+            print("Anticlockwise")
+        return msg_pb2.Response(status=0)
 
     """
     def RobotPath(self, request, context):

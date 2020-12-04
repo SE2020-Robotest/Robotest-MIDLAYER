@@ -2,7 +2,7 @@
 '''
 Author: ou yang xu jian
 Date: 2020-11-23 21:44:44
-LastEditTime: 2020-11-27 12:32:10
+LastEditTime: 2020-11-30 18:13:11
 LastEditors: Please set LastEditors
 Description: In User Settings Edit
 FilePath: \se2020\communication\robot_server.py
@@ -22,13 +22,14 @@ Port = 8888
 
 class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
-    def __init__(self, reciveMap, reciveCommand, reciveVoice):
+    def __init__(self, reciveMap, reciveCommand, reciveVoice, reciveDriveCommand):
         '''
         The following are callback function for handling the message
         '''
         self.reciveMap = reciveMap
         self.reciveCommand = reciveCommand
         self.reciveVoice = reciveVoice
+        self.reciveDriveCommand = reciveDriveCommand
         return
 
     def ConfigMap(self, request, context):
@@ -53,7 +54,8 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveMap is not None:
-            return msg_pb2.Response(status=self.reciveMap(request, context)) # The Callback function
+            # The Callback function
+            return msg_pb2.Response(status=self.reciveMap(request, context))
         else:
             return msg_pb2.Response(status=0)
 
@@ -69,17 +71,10 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
         TODO: post the custom message of getting Control Command
         '''
         # The following code prints the received message
-        cmd = request.cmd
-        if cmd == 0:
-            print("Start the Experiment")
-        elif cmd == 1:
-            print("Stop the Experiment")
-        elif cmd == 2:
-            print("build connect")
-
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveCommand is not None:
-            return msg_pb2.Response(status=self.reciveCommand(request, context)) # The Callback function
+            # The Callback function
+            return msg_pb2.Response(status=self.reciveCommand(request, context))
         else:
             return msg_pb2.Response(status=0)
 
@@ -108,9 +103,20 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
             print(bytestr.file)
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveVoice is not None:
-            return msg_pb2.Response(status=self.reciveVoice(request_iterator, context)) # The Callback function
+            # The Callback function
+            return msg_pb2.Response(status=self.reciveVoice(request_iterator, context))
         else:
             return msg_pb2.Response(status=0)
+
+    def DriveRobot(self, response, context):
+        '''
+        description: this function is the response function when the control server site sends drive robot message
+        param {*} self
+        param {Drive} response
+        param {*} context
+        return {Response}
+        '''
+        return msg_pb2.Response(status=self.reciveDriveCommand(response, context))
 
     """
     def RobotPath(self, request, context):

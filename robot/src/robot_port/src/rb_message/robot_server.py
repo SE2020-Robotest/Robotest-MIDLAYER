@@ -71,14 +71,6 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
         TODO: post the custom message of getting Control Command
         '''
         # The following code prints the received message
-        cmd = request.cmd
-        if cmd == 0:
-            print("Start the Experiment")
-        elif cmd == 1:
-            print("Stop the Experiment")
-        elif cmd == 2:
-            print("build connect")
-
         # if the reqeust message goes wrong, please modify the status to 1
         if self.reciveCommand is not None:
             # The Callback function
@@ -124,19 +116,6 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
         param {*} context
         return {Response}
         '''
-        cmd = response.drivecmd
-        if cmd == 0:
-            print("Front")
-        elif cmd == 1:
-            print("Back")
-        elif cmd == 2:
-            print("Left")
-        elif cmd == 3:
-            print("Right")
-        elif cmd == 4:
-            print("Clockwise")
-        elif cmd == 5:
-            print("Anticlockwise")
         return msg_pb2.Response(status=self.reciveDriveCommand(response, context))
 
     """

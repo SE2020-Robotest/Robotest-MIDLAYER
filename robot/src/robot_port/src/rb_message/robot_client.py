@@ -20,7 +20,7 @@ receiverAddr = {
         "Port": 8888
     },
     "Ctrl": {
-        "IP": "183.172.220.1",
+        "IP": "172.20.10.3",
         "Port": 8889
     },
     "Robot": {
@@ -118,7 +118,7 @@ def sendResponseMsg(receiver, status):
     print("send robot path to " + receiver + ": " + address)
     channel = grpc.insecure_channel(address)
     stub = msg_pb2_grpc.MsgServicesStub(channel)
-    resultmsg = msg_pb2.Response(status)
+    resultmsg = msg_pb2.Response(status = status)
     response = stub.RobotFinished(resultmsg)
     print("Send Robot Finished Feedback" + "{}".format(response.status))
     return response.status

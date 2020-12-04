@@ -2,11 +2,12 @@
 '''
 Author: ou yang xu jian
 Date: 2020-11-23 21:44:44
-LastEditTime: 2020-11-30 18:13:11
+LastEditTime: 2020-12-04 22:53:00
 LastEditors: Please set LastEditors
 Description: In User Settings Edit
 FilePath: \se2020\communication\robot_server.py
 '''
+from threading import Lock
 from concurrent import futures
 import time
 
@@ -159,7 +160,13 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
     """
 
 
+_ROBOT_SERVER_RUNNING = True
+lock = Lock()
+
+
 def serve(servicer):
+    global _ROBOT_SERVER_RUNNING
+    _ROBOT_SERVER_RUNNING = True
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     msg_pb2_grpc.add_MsgServicesServicer_to_server(
         servicer, server
@@ -167,11 +174,25 @@ def serve(servicer):
     server.add_insecure_port('[::]:{}'.format(Port))
     server.start()
     try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
+        while _ROBOT_SERVER_RUNNING:
+            # time.sleep(_ONE_DAY_IN_SECONDS)
+            pass
     except KeyboardInterrupt:
         server.stop(0)
 
 
+def stop():
+    global _ROBOT_SERVER_RUNNING
+    with lock:
+        _ROBOT_SERVER_RUNNING = False
+
+
 if __name__ == '__main__':
-    serve(RobotServicer())
+    import _thread
+    robotserver = RobotServicer()
+    _thread.start_new_thread(serve, (robotserver,))
+    # serve(robotserver)
+    print("start server")
+    time.sleep(5)
+    stop()
+    time.sleep(1)

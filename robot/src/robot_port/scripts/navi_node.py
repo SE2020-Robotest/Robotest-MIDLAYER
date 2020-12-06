@@ -58,11 +58,6 @@ class navi_nodes:
 		rospy.Subscriber('virtual_map', vmap, self.load_map)
 		rospy.Subscriber('path', path, self.recieve_path)
 		rospy.Subscriber('dst', point_2d, self.recieve_dst)
-
-		r = rospy.get_param("robot_radius")
-		d = rospy.get_param("grid_size")
-		graph.r_robot = float(r)
-		graph.delta = float(d)
 		
 		rospy.loginfo("Navi: Navigation Node Initialized!")
 		return

@@ -17,7 +17,7 @@ from robot_port.msg import enum_type
 import rb_message.robot_server as msg_server
 import rb_message.robot_client as msg_client
 
-test_mode = True
+test_mode = False
 
 class communicater:
 
@@ -71,6 +71,7 @@ class communicater:
 			return
 		try:
 			msg_client.sendRBPosition("Ctrl", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
+			# print rospy.Time.now().to_sec() - msg.stamp
 		except Exception as e:
 			rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
 		'''
@@ -132,13 +133,13 @@ class communicater:
 		if test_mode:
 			return
 		try:
-			msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
-		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to Control port!\nDetails: %s", e)
-		try:
 			msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
 		except Exception as e:
 			rospy.logerr("Communicater: Cannot connect to AR port!\nDetails: %s", e)
+		try:
+			msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
+		except Exception as e:
+			rospy.logerr("Communicater: Cannot connect to Control port!\nDetails: %s", e)
 		return
 
 	def send_response_to_ctrl(self, msg):

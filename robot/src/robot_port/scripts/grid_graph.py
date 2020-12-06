@@ -19,11 +19,6 @@ from my_pq import my_pq
 from enum_list import *
 
 
-r_robot = 5.0 # Radius of robot
-r_nbr = 50
-delta = 2 # grid size
-graph_mode = SMOOTH
-
 class v_type(Enum):
 	empt = 0
 	full = 1

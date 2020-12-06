@@ -33,3 +33,8 @@ DIST_MAX = 9999.0
 eps = 1e-12
 ROUGH = 0
 SMOOTH = 1
+
+r_robot = 18.0 # Radius of robot
+r_nbr = 50
+delta = 5 # grid size
+graph_mode = SMOOTH

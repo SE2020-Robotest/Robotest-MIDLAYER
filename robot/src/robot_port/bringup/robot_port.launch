@@ -1,8 +1,6 @@
 <launch>
     <param name="robot_status" value="sleeping"/>
     <param name="exp_status" value="waiting"/>
-    <param name="robot_radius" value="15.0"/>
-    <param name="grid_size" value="5"/>
 
     <node pkg="robot_port" name="communicater" type="communicater.py" output="screen"
 	  respawn="true"/>

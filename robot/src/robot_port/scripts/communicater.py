@@ -17,7 +17,7 @@ from robot_port.msg import enum_type
 import rb_message.robot_server as msg_server
 import rb_message.robot_client as msg_client
 
-test_mode = False
+test_mode = True
 
 class communicater:
 
@@ -120,7 +120,7 @@ class communicater:
 		try:
 			msg_client.sendRBPath("Ctrl", path)
 		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
+			rospy.logerr("Communicater: Cannot connect to Control port!\nDetails: %s", e)
 		return
 
 	def send_rb_voice_cmd(self, msg):
@@ -134,11 +134,11 @@ class communicater:
 		try:
 			msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
 		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
+			rospy.logerr("Communicater: Cannot connect to Control port!\nDetails: %s", e)
 		try:
 			msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
 		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to AR port! Details:\n %s", e)
+			rospy.logerr("Communicater: Cannot connect to AR port!\nDetails: %s", e)
 		return
 
 	def send_response_to_ctrl(self, msg):
@@ -153,7 +153,7 @@ class communicater:
 		try:
 			msg_client.sendResponseMsg("Ctrl", msg.type)
 		except Exception as e:
-			rospy.logerr("Communicater: Failed to send the response! Cannot connect to Control port! Details:\n %s", e)
+			rospy.logerr("Communicater: Failed to send the response! Cannot connect to Control port!\nDetails: %s", e)
 		return
 
 	def recive_map(self, request, context):

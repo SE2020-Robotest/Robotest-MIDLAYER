@@ -19,6 +19,7 @@ class fake_cmd:
 		self.path_ori_pub = rospy.Publisher('path_ori', path_ori, queue_size = 10)
 		self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
 		self.dst_pub = rospy.Publisher('dst', point_2d, queue_size = 5)
+		self.mark_pub = rospy.Publisher('mark_vmap', String, queue_size = 5)
 		rospy.init_node('fake_cmd', anonymous = False)
 		rospy.loginfo("Fake_cmd: Fake_cmd Node Initialized!")
 		return
@@ -55,13 +56,16 @@ class fake_cmd:
 	    	    	map_object[] obj
 				'''
 				m = vmap()
-				m.w = 100
-				m.h = 500
+				m.w = 300
+				m.h = 400
 				m.obj.append(map_object(0, 13, 134, 40, 120))
-				m.obj.append(map_object(0, 63, 424, 45, 40))
-				m.obj.append(map_object(0, 73, 190, 20, 160))
-				m.obj.append(map_object(1, 42, 313, 43, 50))
-				m.obj.append(map_object(1, 50, 50, 33, 50))
+				m.obj.append(map_object(0, 163, 350, 45, 40))
+				m.obj.append(map_object(0, 253, 360, 50, 50))
+				m.obj.append(map_object(0, 273, 190, 20, 130))
+				m.obj.append(map_object(0, 50, 290, 40, 140))
+				m.obj.append(map_object(1, 142, 253, 43, 50))
+				m.obj.append(map_object(1, 130, 113, 60, 50))
+				m.obj.append(map_object(1, 250, 50, 33, 50))
 				self.map_pub.publish(m)
 			elif s == "move test":
 				self.dst_pub.publish(57, 342)
@@ -87,6 +91,8 @@ class fake_cmd:
 				rospy.set_param(status.rbs, status.rb.sleep)
 			elif s == "status":
 				print rospy.get_param(status.rbs), rospy.get_param(status.exps)
+			elif s == "mark":
+				self.mark_pub.publish("mark")
 			else:
 				self.voice_pub.publish(rospy.Time.now().secs, s)
 		return

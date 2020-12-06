@@ -49,7 +49,6 @@ class navi_nodes:
 		self.rb_s = rb()
 		self.exp_s = exp()
 		self.trans = trans()
-		rospy.loginfo("Navi: Navigation Node Initialized!")
 
 		self.move_cmd_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
 		self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -64,7 +63,8 @@ class navi_nodes:
 		d = rospy.get_param("grid_size")
 		graph.r_robot = float(r)
 		graph.delta = float(d)
-
+		
+		rospy.loginfo("Navi: Navigation Node Initialized!")
 		return
 
 	def start(self):
@@ -98,7 +98,11 @@ class navi_nodes:
 			elif obj.type == CUBE:
 				self.g.add_rect(obj.x, obj.y, obj.w, obj.h)
 		self.g.finish()
-		cur_p = self.trans.get_posi()
+		try:
+			cur_p = self.trans.get_posi()
+		except rospy.exceptions.ROSException as e:
+			rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+			return
 		if not self.g.is_empt_coordinate(cur_p[0], cur_p[1]):
 			rospy.logwarn("Navi: Current position in the virtual map is illegal!")
 			p = self.g.correct_point_coordinate(cur_p[0], cur_p[1])
@@ -282,7 +286,12 @@ class navi_nodes:
 
 	def move_to_by_cmd_vel(self, p):
 		rate = rospy.Rate(10)
-		msg = self.trans.get_msg()
+		move_cmd = Twist()
+		try:
+			msg = self.trans.get_msg()
+		except rospy.exceptions.ROSException as e:
+			rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+			return False
 		cur_p = self.trans.get_posi(msg)
 
 		print "Navi: Move to %s, %s"%(p[0], p[1])
@@ -291,16 +300,19 @@ class navi_nodes:
 		while True:
 			if self.exp_s.get_status() != exp.move and self.rb_s.get_status() != rb.init:
 				return False
-			msg = self.trans.get_msg()
+			try:
+				msg = self.trans.get_msg()
+			except rospy.exceptions.ROSException as e:
+				rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+				return False
 			cur_angle = self.trans.get_angle(msg)
 			angle = self.trans.normalize_angle(self.get_orientation(cur_p, p) - cur_angle)
 			if abs(angle) < eps_a:
 				self.move_cmd_pub.publish(Twist())
 				break
 			linear = 0
-			angular = 4 * angle
+			angular = 2 * angle
 			angular = min(max_a, max(-max_a, angular))
-			move_cmd = Twist()
 			move_cmd.linear.x = linear
 			move_cmd.angular.z = angular
 			self.move_cmd_pub.publish(move_cmd)
@@ -311,7 +323,11 @@ class navi_nodes:
 		while True:
 			if self.exp_s.get_status() != exp.move and self.rb_s.get_status() != rb.init:
 				return False
-			msg = self.trans.get_msg()
+			try:
+				msg = self.trans.get_msg()
+			except rospy.exceptions.ROSException as e:
+				rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+				return False
 			cur_p = self.trans.get_posi(msg)
 			cur_angle = self.trans.get_angle(msg)
 			d = self.dist(p, cur_p)
@@ -330,8 +346,9 @@ class navi_nodes:
 			else:
 				linear = d / 100
 			linear = min(max_l, linear)
-			move_cmd = Twist()
-			move_cmd.linear.x = linear
+			delta_l = linear - move_cmd.linear.x
+			delta_l = min(delta_l, max_delta_l)
+			move_cmd.linear.x += delta_l
 			move_cmd.angular.z = angular
 			self.move_cmd_pub.publish(move_cmd)
 			rate.sleep()

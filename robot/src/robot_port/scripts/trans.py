@@ -13,6 +13,7 @@ class trans:
 
 	def __init__(self):
 		self.listener = tf.TransformListener()
+		rospy.sleep(1)
 		return
 
 	def rotate(self, x, y, theta):

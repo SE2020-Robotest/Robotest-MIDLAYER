@@ -1,13 +1,13 @@
 <launch>
     <param name="robot_status" value="sleeping"/>
     <param name="exp_status" value="waiting"/>
-    <param name="TEST_MODE" value="False"/>
+    <param name="TEST_MODE" value="True"/>
     <param name="connected" value="False"/>
 
-    <node pkg="robot_port" name="communicater" type="communicater.py" output="screen" respawn="true" respawn_delay="5.0" launch-prefix="xterm -e"/>
-    <node pkg="robot_port" name="posi_publisher" type="posi_publisher.py" output="screen" respawn_delay="5.0" respawn="true"/>
+    <node pkg="robot_port" name="communicater" type="communicater.py" output="screen"/>
+    <node pkg="robot_port" name="posi_publisher" type="posi_publisher.py" output="screen"/>
     <node pkg="robot_port" name="navi_node" type="navi_node.py" output="screen" required="true"/>
     <node pkg="robot_port" name="drive" type="drive.py" output="screen" respawn="true"/>
     <node pkg="robot_port" name="vmap_broadcaster" type="vmap_broadcaster.py" output="screen"/>
-    <node pkg="robot_port" name="fake_cmd" type="fake_cmd.py" output="screen" launch-prefix="xterm -e"/>
+    <node pkg="robot_port" name="test" type="test.py" output="screen" launch-prefix="xterm -e"/>
 </launch>

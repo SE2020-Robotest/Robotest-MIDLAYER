@@ -58,17 +58,25 @@ class fake_cmd:
 				m = vmap()
 				m.w = 300
 				m.h = 400
-				m.obj.append(map_object(0, 13, 134, 40, 120))
-				m.obj.append(map_object(0, 163, 350, 45, 40))
-				m.obj.append(map_object(0, 253, 360, 50, 50))
-				m.obj.append(map_object(0, 273, 190, 20, 130))
-				m.obj.append(map_object(0, 50, 290, 40, 140))
-				m.obj.append(map_object(1, 142, 253, 43, 50))
-				m.obj.append(map_object(1, 130, 113, 60, 50))
-				m.obj.append(map_object(1, 250, 50, 33, 50))
+				m.obj.append(map_object(0, 13, 114, 30, 110))
+				m.obj.append(map_object(0, 163, 350, 35, 30))
+				m.obj.append(map_object(0, 253, 360, 40, 40))
+				m.obj.append(map_object(0, 273, 190, 15, 120))
+				m.obj.append(map_object(0, 50, 290, 30, 130))
+				m.obj.append(map_object(1, 142, 253, 33, 50))
+				m.obj.append(map_object(1, 130, 113, 50, 50))
+				m.obj.append(map_object(1, 250, 50, 23, 50))
 				self.map_pub.publish(m)
-			elif s == "move test":
-				self.dst_pub.publish(57, 342)
+			elif s == "move_dst test":
+				self.dst_pub.publish(300, 400)
+			elif s == "move_path test":
+				path = [[299, 399], [250, 350], [200, 250], [150, 150], [100, 100], [50, 50], [0, 0]]
+				path_msg = path_ori()
+				path_msg.start_time = rospy.Time.now().secs
+				path_msg.end_time = rospy.Time.now().secs
+				for p in path:
+					path_msg.p.append(point_2d(p[0], p[1]))
+				self.path_ori_pub.publish(path_msg)
 			elif s == "move to":
 				x = float(input("Input the x coordinate:"))
 				y = float(input("Input the y coordinate:"))

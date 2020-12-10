@@ -41,6 +41,11 @@ class grid_graph:
 		"Determine whether i,j is in the graph, and v[i][j] is empty"
 		return self.is_inside(i, j) and self.v[i][j] == v_type.empt
 
+	def is_empt_coordinate(self, x, y):
+		j = int(x // delta)
+		i = int(y // delta)
+		return self.is_empt(i, j)
+
 	def index1(self, i, j):
 		return i * self.j_range + j
 
@@ -123,8 +128,8 @@ class grid_graph:
 		"Parameters' type is float (cm)"
 		if self.finished:
 			return
-		w += r_robot
-		h += r_robot
+		w += 2 * r_robot
+		h += 2 * r_robot
 		l = int(max((x - w / 2) / delta, 0))
 		if delta * l < x - w: l += 1
 		r = int(min((x + w / 2) / delta, self.j_range - 1))
@@ -189,11 +194,6 @@ class grid_graph:
 		i = int(y // delta)
 		[i, j] = self.correct_point_index(i, j)
 		return [j * delta, i * delta]
-
-	def is_empt_coordinate(self, x, y):
-		j = int(x // delta)
-		i = int(y // delta)
-		return self.is_empt(i, j)
 
 	def find_path(self, px, py, qx, qy):
 		pj = int(px // delta)
@@ -277,7 +277,8 @@ class grid_graph:
 					path.append([v_path[1]*delta, v_path[0]*delta])
 					cur_len = dis[self.index1(v_path[0], v_path[1])]
 					break
-		path.pop()
+		if len(path) > 1:
+			path.pop()
 		path.reverse()
 		self.prt_path(p)
 		return path
@@ -310,16 +311,33 @@ class grid_graph:
 			print "\n",
 		print "\n"
 
-
-if __name__ == '__main__':
-	# Test
-	m = grid_graph(100, 500)
-	m.add_circle(42, 313, 43)
+def test_grid_graph():
+	failed_str = ["Cannot correctly determine whether a point is legal!", "Cannot correctly find the path!"]
+	m = grid_graph(110, 500)
 	m.add_rect(13, 134, 40, 120)
 	m.add_rect(63, 424, 45, 40)
 	m.add_rect(73, 190, 20, 160)
-	m.add_circle(50, 50, 33)
+	m.add_rect(-100, 200, 96, 62)
+	m.add_circle(50, 50, 25)
+	m.add_circle(42, 313, 43)
+	m.add_circle(200, 200, 63)
 	m.finish()
+	m.add_circle(0, 0, 100)
 	path = m.find_path(0, 0, 83, 413)
-	for p in path:
-		print p[0], p[1]
+	assert m.is_empt_coordinate(0, 0), failed_str[0]
+	assert m.is_empt_coordinate(99, 499), failed_str[0]
+	assert not m.is_empt_coordinate(-1, 499), failed_str[0]
+	assert not m.is_empt_coordinate(0, 500), failed_str[0]
+	assert not m.is_empt_coordinate(93, 50), failed_str[0]
+	assert not m.is_empt_coordinate(61, 134), failed_str[0]
+	assert len(path) > 0, failed_str[1]
+	path = m.find_path(0, 0, 0, 0)
+	assert len(path) > 0, failed_str[1]
+
+if __name__ == '__main__':
+	try:
+		test_grid_graph()
+		print "Test pass!"
+	except Exception as e:
+		print e
+	

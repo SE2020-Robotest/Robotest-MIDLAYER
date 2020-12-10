@@ -17,6 +17,7 @@ from nav_msgs.msg import Odometry
 from robot_port.msg import map_object
 from robot_port.msg import vmap
 from robot_port.msg import path
+from robot_port.msg import path_ori
 from robot_port.msg import point_2d
 from robot_port.msg import enum_type
 
@@ -51,12 +52,13 @@ class navi_nodes:
 		self.trans = trans()
 
 		self.move_cmd_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
+		self.move_cmd = Twist()
 		self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 		self.path_pub = rospy.Publisher('path', path, queue_size = 10)
 		self.res_to_ctrl_pub = rospy.Publisher('response_to_ctrl', enum_type, queue_size = 10)
 
 		rospy.Subscriber('virtual_map', vmap, self.load_map)
-		rospy.Subscriber('path', path, self.recieve_path)
+		rospy.Subscriber('path_ori', path_ori, self.recieve_path)
 		rospy.Subscriber('dst', point_2d, self.recieve_dst)
 		
 		rospy.loginfo("Navi: Navigation Node Initialized!")
@@ -115,13 +117,63 @@ class navi_nodes:
 
 	def recieve_path(self, msg):
 		"Recieve the path, correct them and move along this path. Finally, send the corrected path to Control port"
+		'''
+		path_ori:
+			int32 start_time
+			int32 end_time
+			point_2d[] p
+		point_2d:
+			float64 x
+			float64 y
+		'''
+
+		# Check the status
 		rb_status = self.rb_s.get_status()
 		exp_status = self.exp_s.get_status()
 		if rb_status != rb.run or exp_status != exp.wait:
 			return
 		self.exp_s.Move() 							# (Important!) Change the status
 
-	
+		# Get the Robot's position
+		try:
+			[px, py] = self.trans.get_posi() # origin position
+		except rospy.ROSInterruptException:
+			return
+		except:
+			rospy.logerr("Navi: Cannot get the Robot's position!")
+			self.exp_s.Wait() 							# (Important!) Change the status
+			return
+		
+		if not self.g.is_empt_coordinate(px, py):
+			[tx, ty] = self.g.correct_point_coordinate(px, py) # correct the origin
+			rospy.logwarn("Navi: The origin is illegal!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(px, py, tx, ty))
+			px = tx
+			py = ty
+		
+		path = [[px, py]]# add the origin point
+		for p in msg.p:
+			# Find path
+			path_tmp = self.g.find_path(path[-1][0], path[-1][1], p.x, p.y)
+			if len(path_tmp) == 0:
+				rospy.logerr("Navi: The destination is not accessable!")
+				self.exp_s.Wait() 						# (Important!) Change the status
+				return
+			path += path_tmp
+		rospy.loginfo("Navi: Finished correcting the path!")
+
+		# Send path message
+		path_msg = []
+		for p in path:
+			path_msg.append(point_2d(p[0], p[1]))
+		self.path_pub.publish(path_msg)
+
+		# Move to the destination
+		rospy.loginfo("Navi: Start moving!")
+		if self.move(path):
+			rospy.loginfo("Navi: Arrive at destination!")
+		else:
+			rospy.logerr("Navi: Failed to achieve destination!")
+		self.exp_s.Wait() 								# (Important!) Change the status
 		return
 
 	def recieve_dst(self, msg):
@@ -178,11 +230,25 @@ class navi_nodes:
 		self.exp_s.Wait() 							# (Important!) Change the status
 		return
 
+	def pub_move_cmd(self, linear, angular):
+		'''
+		Normalize the velocities and publish them.
+		The linear velocity and its difference is bounded by max_l and max_delta_l.
+		The angular velocity and its difference is bounded by max_a and max_delta_a.
+		'''
+		linear = max(min(linear, max_l), -max_l)
+		angular = max(min(angular, max_a), -max_a)
+		delta_l = linear - self.move_cmd.linear.x
+		delta_l = max(min(delta_l, max_delta_l), -max_delta_l)
+		delta_a = angular - self.move_cmd.angular.z
+		delta_a = max(min(delta_a, max_delta_a), -max_delta_a)
+		self.move_cmd.linear.x += delta_l
+		self.move_cmd.angular.z += delta_a
+		self.move_cmd_pub.publish(self.move_cmd)
+
 	def move(self, path):
 		if cur_navi_method == navi_method.cmd_vel:
 			return self.move_by_cmd_vel(path)
-		elif cur_navi_method == navi_method.cmd_vel_smooth:
-			return self.move_by_cmd_vel_smooth(path)
 		elif cur_navi_method == navi_method.move_base_grid_graph:
 			return self.move_by_move_base_grid_graph(path)
 		elif cur_navi_method == navi_method.move_base_map_server:
@@ -196,121 +262,40 @@ class navi_nodes:
 				return False
 		return True
 
-	def move_by_cmd_vel_smooth(self, path):
-		l = len(path)
-		for i in range(l):
-			if self.exp_s.get_status() != exp.move:
-				return False
-			if not self.move_to_by_cmd_vel_smooth(path[i - 1] if i > 0 else None, path[i], i < l - 1):
-				return False
-		return True
-
-	def move_to_by_cmd_vel_smooth(self, last_p, p, has_next = False):
-		rate = rospy.Rate(10)
-		'''
-		print "Navi: Move to %s, %s"%(p[0], p[1])
-		
-		while True:
-			if self.exp_s.get_status() != exp.move and self.rb_s.get_status() != rb.init:
-				return False
-			msg = self.trans.get_msg()
-			cur_p = self.trans.get_posi(msg)
-			cur_angle = self.trans.get_angle(msg)
-			angle = self.trans.normalize_angle(self.get_orientation(cur_p, p) - cur_angle)
-			if abs(angle) < eps_a:
-				break
-			if has_next and :
-				break
-			if abs(angle) > 1.0:
-				linear = 0
-			else:
-				linear = max_l / 2
-			angular = 4 * angle
-			angular = min(max_a, max(-max_a, angular))
-			move_cmd = Twist()
-			move_cmd.linear.x = linear
-			move_cmd.angular.z = angular
-			self.move_cmd_pub.publish(move_cmd)
-			rate.sleep()
-		
-		while True:
-			if self.exp_s.get_status() != exp.move and self.rb_s.get_status() != rb.init:
-				return False
-			msg = self.trans.get_msg()
-			cur_p = self.trans.get_posi(msg)
-			cur_angle = self.trans.get_angle(msg)
-			d = self.dist(p, cur_p)
-			angle = self.trans.normalize_angle(self.get_orientation(cur_p, p) - cur_angle)
-			if has_next:
-				if d < d_turn:
-					break
-			else:
-				if d < eps_d:
-					break
-			if d*abs(angle) > eps_d:
-				angular = angle
-			else:
-				angular = 0
-			angular = min(max_a, max(-max_a, angular))
-			
-			if abs(angle) > 1.0:
-				linear = 0
-			elif abs(angle) > 0.5:
-				if has_next:
-					linear = max_l / 2
-				else:
-					linear = d / 200
-			else:
-				if has_next:
-					if d < d_slow:
-						linear = max_l / 2
-					else:
-						linear = max_l
-				else:
-					linear = d / 100
-			linear = min(max_l, linear)
-			move_cmd = Twist()
-			move_cmd.linear.x = linear
-			move_cmd.angular.z = angular
-			self.move_cmd_pub.publish(move_cmd)
-			rate.sleep()
-
-		print "Navi: Arrive at %s, %s"%(cur_p[0], cur_p[1])
-		'''
-		return True
-
 	def move_to_by_cmd_vel(self, p):
 		rate = rospy.Rate(10)
-		move_cmd = Twist()
+		linear = 0
+		angular = 0
+		self.move_cmd = Twist()
+
 		try:
 			msg = self.trans.get_msg()
 		except rospy.exceptions.ROSException as e:
 			rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
 			return False
-		cur_p = self.trans.get_posi(msg)
 
+		d = self.dist(p, self.trans.get_posi(msg))
+		if d < eps_d:
+			return True
 		print "Navi: Move to %s, %s"%(p[0], p[1])
 		print "Navi: Rotate!"
 
 		while True:
 			if self.exp_s.get_status() != exp.move and self.rb_s.get_status() != rb.init:
 				return False
+			
 			try:
 				msg = self.trans.get_msg()
 			except rospy.exceptions.ROSException as e:
 				rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
 				return False
-			cur_angle = self.trans.get_angle(msg)
-			angle = self.trans.normalize_angle(self.get_orientation(cur_p, p) - cur_angle)
-			if abs(angle) < eps_a:
-				self.move_cmd_pub.publish(Twist())
-				break
-			linear = 0
-			angular = 2 * angle
-			angular = min(max_a, max(-max_a, angular))
-			move_cmd.linear.x = linear
-			move_cmd.angular.z = angular
-			self.move_cmd_pub.publish(move_cmd)
+			cur_p = self.trans.get_posi(msg)
+			angle = self.trans.normalize_angle(self.get_orientation(cur_p, p) - self.trans.get_angle(msg))
+			
+			if abs(angle) < eps_a: 		# if the angle is tollerant
+				self.pub_move_cmd(0, 0) # stop moving
+				break 					# and break the loop
+			self.pub_move_cmd(0, 2 * angle)
 			rate.sleep()
 
 		print "Navi: Move!"
@@ -323,29 +308,30 @@ class navi_nodes:
 			except rospy.exceptions.ROSException as e:
 				rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
 				return False
+			
+			# Compute the distance to p and delta angle pointing to p
 			cur_p = self.trans.get_posi(msg)
-			cur_angle = self.trans.get_angle(msg)
 			d = self.dist(p, cur_p)
-			angle = self.trans.normalize_angle(self.get_orientation(cur_p, p) - cur_angle)
-			if d < eps_d:
-				break
-			if d*abs(angle) > eps_d:
-				angular = 2 * angle
+			angle = self.trans.normalize_angle(self.get_orientation(cur_p, p) - self.trans.get_angle(msg))
+			
+			if d < eps_d:	# if the distance is tollerant
+				break 		# break the loop
+			
+			# Compute the velocity
+			if d*abs(angle) > eps_d: 	# if the angle is too large
+				angular = 2 * angle  	# adjust the current angle to face p
 			else:
 				angular = 0
 			angular = min(max_a, max(-max_a, angular))
-			if abs(angle) > 1.0:
-				linear = 0
+			
+			if abs(angle) > 1.0:		# if the angle is too large
+				linear = 0				# decrease the linear velocity
 			elif abs(angle) > 0.5:
 				linear = d / 200
 			else:
 				linear = d / 100
-			linear = min(max_l, linear)
-			delta_l = linear - move_cmd.linear.x
-			delta_l = min(delta_l, max_delta_l)
-			move_cmd.linear.x += delta_l
-			move_cmd.angular.z = angular
-			self.move_cmd_pub.publish(move_cmd)
+			
+			self.pub_move_cmd(linear, angular)
 			rate.sleep()
 
 		print "Navi: Arrive at %s, %s"%(cur_p[0], cur_p[1])

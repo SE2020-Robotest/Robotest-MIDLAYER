@@ -42,7 +42,7 @@ Robotest-MIDLAYER/robot/src/robot_port/msg:
 ### 相关topics:
 * virtual_map: (从控制端)收到初始化的地图配置信息后发布到这个topic
 * posi: 要发送位置等信息到控制端和AR端，请发布到这个topic
-* path_ori: 发送识别得到的路径到控制端，请发布到这个topic
+* path_ori: 发送识别得到的路径，communicater会将之发送至控制端，同时Navi节点会开始依此执行导航任务
 * path: 发送修正后的实际路径到控制端，请发布到这个topic
 * voice_cmd: 发送语音识别得到的指令，请发布到这个topic
 * drive_cmd: 接受键盘开车的指令
@@ -64,21 +64,26 @@ Robotest-MIDLAYER/robot/src/robot_port/scripts:
 >run exp: 强制将状态设置为running  
 >stop exp: 强制将状态设置为sleeping  
 >load map: 加载预置的一张地图  
->move test: 发送一个预置的目的地到navi节点，让机器人移动过去  
->move to: 回车后会要求输入一个x, y坐标，然后将其作为目的地发送至navi节点
+>move_dst test: 发送一个预置的目的地到navi节点，让机器人移动过去  
+>move_path test: 发送一段预置的路径到navi节点，让机器人沿路径移动过去。最好先保证机器人位于地图的右上角  
+>move to: 回车后会要求输入一个x, y坐标，然后将其作为目的地发送至navi节点  
 >status: 返回当前robot和exp的状态。
+* test: 测试模块。请勿直接运行本节点，需要其他节点运行才能进行测试。测试时请调用test.launch文件。
 
 ### 参数:
-#### robot_status: 机器人的状态，有4种: 
+* robot_status: 机器人的状态，有4种: 
 >sleeping: 目前没有实验。  
 >initializing: 正在启动一次实验。此时主要完成加载地图的操作。  
 >running: 正在进行实验。这是最主要的状态。其更细化的状态为exp_status
 
-#### exp_status: 实验中的状态
+* exp_status: 实验中的状态
 >waiting: 等待指令。  
 >recogniting: 指令识别中（手势识别）。此状态与moving状态必须严格分离，因为要杜绝手势识别和移动同时发生的情况。  
 >moving: 执行导航等任务，正在移动中。此状态和上一个状态之间不能直接转换，只能先转换到wating状态。
 
-#### robot_radius: 机器人的半径（单位为cm）
-#### grid_size: 将地图柵格化处理时格子的尺寸（单位为cm）
+* connected: 指示是否与控制端建立连接
+
+### launch文件:
+* robot_port.launch: 实际运行时请launch本文件
+* test.launch: 测试robot_port包时请launch本文件
 

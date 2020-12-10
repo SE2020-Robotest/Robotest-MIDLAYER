@@ -3,6 +3,7 @@
 
 import thread
 import rospy
+import socket
 from status import rb, exp
 from enum_list import *
 from std_msgs.msg import String
@@ -17,7 +18,15 @@ from robot_port.msg import enum_type
 import rb_message.robot_server as msg_server
 import rb_message.robot_client as msg_client
 
-test_mode = False
+def get_host_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+
+    return ip
 
 class communicater:
 
@@ -41,15 +50,31 @@ class communicater:
 		status = self.rb_s.get_status()
 		rospy.loginfo("Communicater: The robot_status now is %s.", status)
 
+		self.TEST_MODE = bool(rospy.get_param("TEST_MODE"))
+		if not self.TEST_MODE:
+			IP = get_host_ip()
+			msg_client.receiverAddr["Robot"]["IP"] = IP
+			print "The IP of Robot Port is:", IP
+			print "The Port of Robot Port is:", msg_client.receiverAddr["Robot"]["Port"]
+			IP = String(raw_input("Please input the IP of Control Port:"))
+			msg_client.receiverAddr["Ctrl"]["IP"] = IP
+			port = String(raw_input("Please input the Port of Control Port:"))
+			msg_client.receiverAddr["Ctrl"]["Port"] = port
+			IP = String(raw_input("Please input the IP of AR Port:"))
+			msg_client.receiverAddr["AR"]["IP"] = IP
+			port = String(raw_input("Please input the Port of AR Port:"))
+			msg_client.receiverAddr["AR"]["Port"] = port
+		
 		recive_srv = msg_server.RobotServicer(self.recive_map, self.recive_command, self.recive_voice, self.recive_drive_command)
 		try:
 			thread.start_new_thread(msg_server.serve, (recive_srv, ))
 			rospy.loginfo("Communicater: Recieving service Initialized!")
 		except:
-			rospy.logerr("Communicater: unable to start the reciving service thread!")
+			rospy.logerr("Communicater: Unable to start the reciving service thread!")
 			self.init_ok = False
 			return
-	
+
+		self.TEST_MODE = bool(rospy.get_param("TEST_MODE"))
 		rospy.loginfo("Communicater: Communicate Node Initialized!")
 		self.init_ok = True
 		return
@@ -67,7 +92,8 @@ class communicater:
 			float64 vy
 			float64 angle
 		'''
-		if test_mode:
+		connected = bool(rospy.get_param("connected"))
+		if self.TEST_MODE or not connected:
 			return
 		try:
 			msg_client.sendRBPosition("Ctrl", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
@@ -88,11 +114,12 @@ class communicater:
 			int32 start_time
 			int32 end_time
 			point_2d[] p
-			point_2d:
+		point_2d:
 			float64 x
 			float64 y
 		'''
-		if test_mode:
+		connected = bool(rospy.get_param("connected"))
+		if self.TEST_MODE or not connected:
 			return
 		path = []
 		for p in msg.p:
@@ -111,7 +138,8 @@ class communicater:
 			float64 x
 			float64 y
 		'''
-		if test_mode:
+		connected = bool(rospy.get_param("connected"))
+		if self.TEST_MODE or not connected:
 			return
 		if len(msg.p) == 0:
 			return
@@ -130,7 +158,8 @@ class communicater:
 			int32 stamp
 			string cmd
 		'''
-		if test_mode:
+		connected = bool(rospy.get_param("connected"))
+		if self.TEST_MODE or not connected:
 			return
 		try:
 			msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
@@ -148,7 +177,8 @@ class communicater:
 			int32 stamp
 			string cmd
 		'''
-		if test_mode:
+		connected = bool(rospy.get_param("connected"))
+		if self.TEST_MODE or not connected:
 			return
 		print msg.type
 		try:
@@ -201,6 +231,7 @@ class communicater:
 			else:
 				rospy.logwarn("Communicater: Cannot stop the Exp. The Exp hasn't started yet!")
 		elif cmd == CONNECT:
+			rospy.set_param("connected", True)
 			rospy.loginfo("Build connect") # build connect
 		else:
 			return 1
@@ -226,4 +257,4 @@ if __name__ == '__main__':
 		if comm.init_ok:
 			comm.start()
 	except rospy.ROSInterruptException:
-		pass
+		msg_server.stop()

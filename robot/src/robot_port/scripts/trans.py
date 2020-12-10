@@ -16,6 +16,9 @@ class trans:
 		rospy.sleep(1)
 		return
 
+	def frame_exists(self, frame_id):
+		return self.listener.frameExists(frame_id)
+
 	def rotate(self, x, y, theta):
 		px = x*cos(theta) - y*sin(theta)
 		py = x*sin(theta) + y*cos(theta)

@@ -17,6 +17,7 @@ posi:
 	float64 angle
 '''
 
+
 def pub():
 	posi_pub = rospy.Publisher('posi_pub', posi, queue_size = 5)
 	rospy.init_node('posi_publisher', anonymous = False)
@@ -25,7 +26,8 @@ def pub():
 	rb_s = rb()
 	rate = rospy.Rate(10)
 	while not rospy.is_shutdown():
-		if rb_s.get_status() == rb.run:
+		connected = bool(rospy.get_param("connected"))
+		if connected:
 			try:
 				msg = tr.get_msg()
 				p = tr.get_pose(msg)

@@ -81,7 +81,7 @@ class my_pq:
 			returnitem = lastelt
 		return returnitem[2]
 
-if __name__ == '__main__':
+def test_my_pq():
 	pq = my_pq()
 	pq.put('a')
 	pq.put('b', 123)
@@ -91,13 +91,24 @@ if __name__ == '__main__':
 	pq.put('f', 99)
 	pq.put('g', 5)
 	pq.put('h', 4)
+	assert not pq.empty(), "The method 'empty' test failed!"
 	pq.put('a', 98)
 	pq.put('b', 23)
 	pq.put('c', 21)
 	pq.put('d', 1)
-	pq.put('e', 2)
-	pq.put('f', 5)
-	pq.put('g', 3)
-	pq.put('h', 3)
+	pq.update('e', 2)
+	pq.update('f', 5)
+	pq.update('g', 3)
+	pq.update('h', 3)
+	correct_ans = ['d', 'e', 'g', 'h', 'f', 'c', 'b', 'a']
+	correct_ans.reverse()
 	while not pq.empty():
-		print pq.get()
+		assert pq.get() == correct_ans.pop(), "Cannot correctly output by priority or cannot correctly update the priority!"
+
+
+if __name__ == '__main__':
+	try:
+		test_my_pq()
+		print "Test pass!"
+	except Exception as e:
+		print e

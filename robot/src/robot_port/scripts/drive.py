@@ -16,6 +16,7 @@ class drive:
 		self.exp_s = exp()
 
 		self.move_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
+		self.move_cmd = Twist()
 
 		rospy.Subscriber('voice_cmd', voice_cmd, self.recieve_voice)
 		rospy.Subscriber('drive_cmd', enum_type, self.recieve_drive_cmd)
@@ -34,6 +35,7 @@ class drive:
 		if cmd == "旋转":
 			rospy.loginfo("Drive: Start Spinning!")
 			self.is_spin = True
+			self.move_cmd = Twist()
 		elif cmd == "停止旋转":
 			rospy.loginfo("Drive: Stop Spinning!")
 			self.is_spin = False
@@ -54,35 +56,52 @@ class drive:
 		if self.is_spin:
 			rospy.logerr("Drive: Spinning now! Please stop spinning first.")
 			return
+		linear = 0
+		angular = 0
 		if cmd == FRONT:
-			move_cmd.linear.x = max_l
+			linear = max_l
 		elif cmd == BACK:
-			move_cmd.linear.x = -max_l
+			linear = -max_l
 		elif cmd == LEFT:
-			move_cmd.linear.x = max_l
-			move_cmd.angular.z = max_a
+			linear = max_l
+			angular = max_a
 		elif cmd == RIGHT:
-			move_cmd.linear.x = max_l
-			move_cmd.angular.z = -max_a
+			linear = max_l
+			angular = -max_a
 		elif cmd == CLOCKWISE:
-			move_cmd.angular.z = max_a
+			angular = max_a
 		elif cmd == ANTICLOCKWISE:
-			move_cmd.angular.z = -max_a
-		self.move_pub.publish(move_cmd)
+			angular = -max_a
+		self.move(linear, angular)
 
 	def spin(self):
-		move_cmd = Twist()
-		move_cmd.angular.z = max_a
-		self.move_pub.publish(move_cmd)
+		self.move(0, max_a)
+
+	def move(self, linear, angular):
+		'''
+		Normalize the velocities and publish them.
+		The linear velocity and its difference is bounded by max_l and max_delta_l.
+		The angular velocity and its difference is bounded by max_a and max_delta_a.
+		'''
+		if self.rb_s.get_status() == rb.run and self.exp_s.get_status() == exp.move:
+			return
+		linear = max(min(linear, max_l), -max_l)
+		angular = max(min(angular, max_a), -max_a)
+		delta_l = linear - self.move_cmd.linear.x
+		delta_l = max(min(delta_l, max_delta_l), -max_delta_l)
+		delta_a = angular - self.move_cmd.angular.z
+		delta_a = max(min(delta_a, max_delta_a), -max_delta_a)
+		self.move_cmd.linear.x += delta_l
+		self.move_cmd.angular.z += delta_a
+		self.move_pub.publish(self.move_cmd)
 
 	def start(self):
 		rate = rospy.Rate(10)
 		while not rospy.is_shutdown():
-			if self.is_spin and (self.rb_s.get_status() != rb.run or self.exp_s.get_status() != exp.move):
+			if self.is_spin:
 				self.spin()
 			rate.sleep()
 		return
-
 
 if __name__ == '__main__':
 	try:

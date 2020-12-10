@@ -63,9 +63,10 @@ Robotest-MIDLAYER/robot/src/robot_port/scripts:
 >start exp: 强制将状态设置为initializing  
 >run exp: 强制将状态设置为running  
 >stop exp: 强制将状态设置为sleeping  
->load map: 加载预置的一张地图  
+>load map: 加载预置的一张地图 
 >move_dst test: 发送一个预置的目的地到navi节点，让机器人移动过去  
 >move_path test: 发送一段预置的路径到navi节点，让机器人沿路径移动过去。最好先保证机器人位于地图的右上角  
+
 >move to: 回车后会要求输入一个x, y坐标，然后将其作为目的地发送至navi节点  
 >status: 返回当前robot和exp的状态。
 * test: 测试模块。请勿直接运行本节点，需要其他节点运行才能进行测试。测试时请调用test.launch文件。

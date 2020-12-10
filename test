@@ -1,0 +1,11 @@
+roslaunch hls_lfcd_lds_driver hlds_laser.launch
+
+rosrun rviz rviz -d `rospack find hls_lfcd_lds_driver`/rviz/hlds_laser.rviz
+roscore
+lsof|grep /dev/ttyACM0
+sudo chmod a+rw /dev/ttyUSB0
+roslaunch turtlebot_bringup minimal.launch
+
+roslaunch turtlebot_navigation gmapping_demo.launch
+
+rosrun map_server map_saver -f ~/map

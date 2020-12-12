@@ -15,14 +15,14 @@ message RBPosition{
     double angle = 2;
     double vx = 3;
     double vy = 4;
-    int32 timestamp = 5;
+    double timestamp = 5;
 }
 
 // robot path
 message RBPath{
     repeated Point pos = 1;
-    int32 starttime = 2;
-    int32 endtime = 3;
+    double starttime = 2;
+    double endtime = 3;
 }
 
 // voice data, use stream to send
@@ -33,7 +33,7 @@ message VoiceData{
 // voice recognition result
 message VoiceStr{
     string voice = 1;
-    int32 timestamp = 2;
+    double timestamp = 2;
 }
 
 // virtual block

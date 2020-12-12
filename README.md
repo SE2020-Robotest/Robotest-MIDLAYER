@@ -1,6 +1,18 @@
 # Robotest-MIDLAYER
 ## 机器人端相关代码
 
+### 运行流程：
+```
+roscore  
+rosrun rviz rviz -d `rospack find hls_lfcd_lds_driver`/rviz/hlds_laser.rviz #可有可无  
+sudo chmod a+rw /dev/ttyUSB0  
+roslaunch turtlebot_bringup minimal.launch  
+roslaunch turtlebot_navigation gmapping_demo.launch  
+roslaunch robot_port robot_port.launch #正式运行  
+roslaunch robot_port test.launch #测试  
+rosrun map_server map_saver -f ~/map #保存地图
+```
+
 ### 自定义的ros消息:
 Robotest-MIDLAYER/robot/src/robot_port/msg:
 >point_2d:  
@@ -39,6 +51,17 @@ Robotest-MIDLAYER/robot/src/robot_port/msg:
 >    float32 h  
 >    map_object[] obj
 
+>enum_type:  
+>    int16 type
+
+>response:  
+>    float64 stamp  
+>    string node  
+>    string discription  
+>    bool response
+
+>stop:  
+>    bool stop
 ### 相关topics:
 * virtual_map: (从控制端)收到初始化的地图配置信息后发布到这个topic
 * posi: 要发送位置等信息到控制端和AR端，请发布到这个topic

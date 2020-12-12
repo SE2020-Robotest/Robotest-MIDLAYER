@@ -14,19 +14,20 @@ from robot_port.msg import voice_cmd
 from robot_port.msg import map_object
 from robot_port.msg import vmap
 from robot_port.msg import enum_type
+from robot_port.msg import stop
 
 import rb_message.robot_server as msg_server
 import rb_message.robot_client as msg_client
 
 def get_host_ip():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(('8.8.8.8', 80))
-        ip = s.getsockname()[0]
-    finally:
-        s.close()
+	try:
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		s.connect(('8.8.8.8', 80))
+		ip = s.getsockname()[0]
+	finally:
+		s.close()
 
-    return ip
+	return ip
 
 class communicater:
 
@@ -40,6 +41,7 @@ class communicater:
 		#Publisher and Subscriber
 		self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
 		self.drive_pub = rospy.Publisher('drive_cmd', enum_type, queue_size = 10)
+		self.stop_pub = rospy.Publisher('stop_exp', stop, queue_size = 2)
 
 		rospy.Subscriber('posi_pub', posi, self.send_rb_posi)
 		rospy.Subscriber('path_ori', path_ori, self.send_rb_path_ori)
@@ -65,12 +67,12 @@ class communicater:
 			port = String(raw_input("Please input the Port of AR Port:"))
 			msg_client.receiverAddr["AR"]["Port"] = port
 		
-		recive_srv = msg_server.RobotServicer(self.recive_map, self.recive_command, self.recive_voice, self.recive_drive_command)
+		receive_srv = msg_server.RobotServicer(self.receive_map, self.receive_command, self.receive_voice, self.receive_drive_command)
 		try:
-			thread.start_new_thread(msg_server.serve, (recive_srv, ))
-			rospy.loginfo("Communicater: Recieving service Initialized!")
+			thread.start_new_thread(msg_server.serve, (receive_srv, ))
+			rospy.loginfo("Communicater: Receiving service Initialized!")
 		except:
-			rospy.logerr("Communicater: Unable to start the reciving service thread!")
+			rospy.logerr("Communicater: Unable to start the receiving service thread!")
 			self.init_ok = False
 			return
 
@@ -187,11 +189,11 @@ class communicater:
 			rospy.logerr("Communicater: Failed to send the response! Cannot connect to Control port!\nDetails: %s", e)
 		return
 
-	def recive_map(self, request, context):
+	def receive_map(self, request, context):
 		"Handling message 'map' from control_port"
 		'''
 		map_object:
-			bool type 	# False means CUBE, True means CYLINDER
+			bool type   # False means CUBE, True means CYLINDER
 			float64 x
 			float64 y
 			float64 w
@@ -214,7 +216,7 @@ class communicater:
 		self.map_pub.publish(request.roomwidth, request.roomheight, obj) # Pubilsh the map to topic 'virtual_map'
 		return 0
 
-	def recive_command(self, request, context):
+	def receive_command(self, request, context):
 		status = self.rb_s.get_status()
 		cmd = int(request.cmd)
 		if cmd == START: # start the exp
@@ -227,6 +229,7 @@ class communicater:
 			if status != rb.sleep:
 				self.exp_s.Wait()
 				self.rb_s.Stop()
+				self.stop_pub.publish(True)
 				rospy.loginfo("Communicater: Stop the Exp successfully!")
 			else:
 				rospy.logwarn("Communicater: Cannot stop the Exp. The Exp hasn't started yet!")
@@ -237,14 +240,14 @@ class communicater:
 			return 1
 		return 0
 
-	def recive_drive_command(self, request, context):
+	def receive_drive_command(self, request, context):
 		cmd = request.drivecmd
 		if self.rb_s.get_status() == rb.run and self.exp_s.get_status() == exp.move:
 			return
 		self.drive_pub.publish(cmd)
 		return 0
 
-	def recive_voice(self, request_iterator, context):
+	def receive_voice(self, request_iterator, context):
 	
 		return 0
 

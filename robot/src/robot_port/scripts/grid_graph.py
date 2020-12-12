@@ -217,34 +217,40 @@ class grid_graph:
 			qx = qj*delta
 			qy = qi*delta
 
-		path = self.find_path_graph(pi, pj, qi, qj)
+		[target, path] = self.find_path_graph(pi, pj, qi, qj)
 		if len(path) == 0:
 			return path
-		path[-1] = [qx, qy] # destination
+		if target != self.index1(qi, qj):
+			if __name__ == '__main__':
+				print "Navi: The destination is not accessible!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(qx, qy, path[-1][0], path[-1][1])
+			else:
+				logwarn("Navi: The destination is not accessible!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(qx, qy, path[-1][0], path[-1][1]))
+		else:
+			path[-1] = [qx, qy] # destination
 		return path
 
-	def find_path_graph(self, pi, pj, qi, qj):
+	def dijkstra(self, pk, qk):
 		"Use dijsktra algorithm to determine the shortest path for single origin. Input the index of vertex, and return the path with unit cm"
-		path = []
-		if (not self.is_empt(pi, pj)) or (not self.is_empt(qi, qj)):
-			return path
 		v_st = [True]*self.N # store whether the distance has been measured
 		for i in range(self.i_range):
 			for j in range(self.j_range):
 				v_st[self.index1(i, j)] = (self.v[i][j] != v_type.empt)
 		dis = [DIST_MAX]*self.N
-		pk = self.index1(pi, pj)
-		qk = self.index1(qi, qj)
+		d = DIST_MAX
 		dis[pk] = 0
 		active = my_pq()
 		active.put(pk) # store the vertexes which have the estimation of distance but not sure(active vertexes)
+		target = -1
 
 		# Dijkstra algorithm
 		while not active.empty():
 			cur_v = active.get()
 			v_st[cur_v] = True
-			if cur_v == qk:
-				break
+			if d > self.dist(cur_v, qk):
+				d = self.dist(cur_v, qk) # record the distance to dst
+				target = cur_v
+			if d < eps: 	# if the distance is 0
+				break  		# then break the loop as we get the dst
 			for i in self.nbr2(cur_v):
 				if dis[i] == DIST_MAX:
 					dis[i] = dis[cur_v] + self.dist(i, cur_v)
@@ -253,14 +259,17 @@ class grid_graph:
 					dis[i] = min(dis[i], dis[cur_v] + self.dist(i, cur_v))
 					if not v_st[i]:
 						active.update(i, dis[i])
-		if not v_st[qk]: return path
-		# find the shortest path
-		v_path = [qi, qj] # current vertex
-		lenth = dis[self.index1(v_path[0], v_path[1])]
+		return [target, dis]
+
+	def find_shortest_path(self, dis, target_i, target_j):
+		"Find the shortest path to target by distance list from origin. Path do not contain the origin."
+		path = []
 		p = []
+		v_path = [target_i, target_j] # current vertex
+		lenth = dis[self.index1(v_path[0], v_path[1])]
 		path.append([v_path[1]*delta, v_path[0]*delta])
 		p.append([v_path[0], v_path[1]])
-		cur_len = dis[self.index1(qi, qj)]
+		cur_len = dis[self.index1(target_i, target_j)]
 		while cur_len > 1e-12:
 			if len(p) >= 2:
 				v_tmp = [2*p[-1][0] - p[-2][0], 2*p[-1][1] - p[-2][1]]
@@ -280,8 +289,18 @@ class grid_graph:
 		if len(path) > 1:
 			path.pop()
 		path.reverse()
+		return [path, p]
+
+	def find_path_graph(self, pi, pj, qi, qj):
+		if (not self.is_empt(pi, pj)) or (not self.is_empt(qi, qj)):
+			return []
+		pk = self.index1(pi, pj)
+		qk = self.index1(qi, qj)
+		[target, dis] = self.dijkstra(pk, qk)
+		[ti, tj] = self.index2(target)
+		[path, p] = self.find_shortest_path(dis, ti, tj)
 		self.prt_path(p)
-		return path
+		return [target, path]
 
 	def prt_map(self):
 		if self.j_range > 100:
@@ -314,12 +333,12 @@ class grid_graph:
 def test_grid_graph():
 	failed_str = ["Cannot correctly determine whether a point is legal!", "Cannot correctly find the path!"]
 	m = grid_graph(110, 500)
-	m.add_rect(13, 134, 40, 120)
+	m.add_rect(13, 64, 30, 30)
 	m.add_rect(63, 424, 45, 40)
-	m.add_rect(73, 190, 20, 160)
+	m.add_rect(73, 200, 20, 140)
 	m.add_rect(-100, 200, 96, 62)
 	m.add_circle(50, 50, 25)
-	m.add_circle(42, 313, 43)
+	m.add_circle(42, 313, 50)
 	m.add_circle(200, 200, 63)
 	m.finish()
 	m.add_circle(0, 0, 100)
@@ -338,6 +357,6 @@ if __name__ == '__main__':
 	try:
 		test_grid_graph()
 		print "Test pass!"
-	except Exception as e:
+	except AssertionError as e:
 		print e
 	

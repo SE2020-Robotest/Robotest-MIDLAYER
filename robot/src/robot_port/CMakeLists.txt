@@ -58,6 +58,8 @@ add_message_files(
   map_object.msg
   vmap.msg
   enum_type.msg
+  response.msg
+  stop.msg
 )
 
 ## Generate services in the 'srv' folder

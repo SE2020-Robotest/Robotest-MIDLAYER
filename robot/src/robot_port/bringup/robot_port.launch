@@ -3,6 +3,7 @@
     <param name="exp_status" value="waiting"/>
     <param name="TEST_MODE" value="False"/>
     <param name="connected" value="False"/>
+    <param name="user_posi" value="[-1, 50]"/>
 
     <node pkg="robot_port" name="communicater" type="communicater.py" output="screen" respawn="true" respawn_delay="5.0" launch-prefix="xterm -e"/>
     <node pkg="robot_port" name="posi_publisher" type="posi_publisher.py" output="screen" respawn_delay="5.0" respawn="true"/>

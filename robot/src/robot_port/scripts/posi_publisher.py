@@ -36,7 +36,7 @@ def pub():
 				rospy.loginfo("Posi_publisher: Wait 10 seconds")
 				rospy.sleep(10)
 				continue
-			posi_pub.publish(msg.header.stamp.secs, p[0], p[1], p[2], p[3], p[4])
+			posi_pub.publish(msg.header.stamp.to_sec(), p[0], p[1], p[2], p[3], p[4])
 		rate.sleep()
 
 if __name__ == '__main__':

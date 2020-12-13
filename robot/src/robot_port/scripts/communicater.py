@@ -58,19 +58,18 @@ class communicater:
 			msg_client.receiverAddr["Robot"]["IP"] = IP
 			print "The IP of Robot Port is:", IP
 			print "The Port of Robot Port is:", msg_client.receiverAddr["Robot"]["Port"]
-			IP = String(raw_input("Please input the IP of Control Port:"))
+			IP = str(raw_input("Please input the IP of Control Port:"))
 			if IP != "":
 				msg_client.receiverAddr["Ctrl"]["IP"] = IP
-			port = String(raw_input("Please input the Port of Control Port:"))
+			port = str(raw_input("Please input the Port of Control Port:"))
 			if port != "":
 				msg_client.receiverAddr["Ctrl"]["Port"] = port
-			IP = String(raw_input("Please input the IP of AR Port:"))
+			IP = str(raw_input("Please input the IP of AR Port:"))
 			if IP != "":
 				msg_client.receiverAddr["AR"]["IP"] = IP
-			port = String(raw_input("Please input the Port of AR Port:"))
+			port = str(raw_input("Please input the Port of AR Port:"))
 			if port != "":
 				msg_client.receiverAddr["AR"]["Port"] = port
-		
 		receive_srv = msg_server.RobotServicer(self.receive_map, self.receive_command, self.receive_voice, self.receive_drive_command)
 		try:
 			thread.start_new_thread(msg_server.serve, (receive_srv, ))
@@ -106,6 +105,7 @@ class communicater:
 			# print rospy.Time.now().to_sec() - msg.stamp
 		except Exception as e:
 			rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
+			rospy.set_param("connected", False)
 		'''
 		try:
 			msg_client.sendRBPosition("AR", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
@@ -134,6 +134,7 @@ class communicater:
 			msg_client.sendRBPath("Ctrl", path, msg.start_time, msg.end_time)
 		except Exception as e:
 			rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
+			rospy.set_param("connected", False)
 		return
 
 	def send_rb_path(self, msg):
@@ -156,6 +157,7 @@ class communicater:
 			msg_client.sendRBPath("Ctrl", path)
 		except Exception as e:
 			rospy.logerr("Communicater: Cannot connect to Control port!\nDetails: %s", e)
+			rospy.set_param("connected", False)
 		return
 
 	def send_rb_voice_cmd(self, msg):
@@ -165,8 +167,8 @@ class communicater:
 			string cmd
 		'''
 		connected = bool(rospy.get_param("connected"))
-		#if self.TEST_MODE or not connected:
-		#	return
+		if self.TEST_MODE or not connected:
+			return
 		try:
 			msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
 		except Exception as e:
@@ -175,6 +177,7 @@ class communicater:
 			msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
 		except Exception as e:
 			rospy.logerr("Communicater: Cannot connect to Control port!\nDetails: %s", e)
+			rospy.set_param("connected", False)
 		return
 
 	def send_response_to_ctrl(self, msg):
@@ -191,6 +194,7 @@ class communicater:
 			msg_client.sendResponseMsg("Ctrl", msg.type)
 		except Exception as e:
 			rospy.logerr("Communicater: Failed to send the response! Cannot connect to Control port!\nDetails: %s", e)
+			rospy.set_param("connected", False)
 		return
 
 	def receive_map(self, request, context):

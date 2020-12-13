@@ -7,6 +7,8 @@ from enum_list import *
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist
 from robot_port.msg import voice_cmd
 from robot_port.msg import enum_type
+from robot_port.msg import response
+from robot_port.msg import stop
 
 class drive:
 	def __init__(self):
@@ -16,14 +18,28 @@ class drive:
 		self.exp_s = exp()
 
 		self.move_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
+		self.response_pub = rospy.Publisher('response', response, queue_size = 10)
 		self.move_cmd = Twist()
 
 		rospy.Subscriber('voice_cmd', voice_cmd, self.recieve_voice)
 		rospy.Subscriber('drive_cmd', enum_type, self.recieve_drive_cmd)
+		rospy.Subscriber('stop_exp', stop, self.stop_exp)
 
 		self.is_spin = False
 		rospy.loginfo("Drive: Drive Node Initialized!")
 		return
+
+	def stop_exp(self, msg):
+		if msg.stop:
+			self.is_spin = False
+
+	def response(self, discription, response):
+		self.response_pub.publish(rospy.Time.now().to_sec(), "Drive", discription, response)
+
+	def canDrive(self):
+		rb_status = self.rb_s.get_status()
+		exp_status = self.exp_s.get_status()
+		return rb_status == rb.sleep or (rb_status == rb.run and exp_status == exp.wait)
 
 	def recieve_voice(self, msg):
 		'''
@@ -33,11 +49,21 @@ class drive:
 		'''
 		cmd = msg.cmd
 		if cmd == "旋转":
-			rospy.loginfo("Drive: Start Spinning!")
-			self.is_spin = True
-			self.move_cmd = Twist()
+			if not self.canDrive():
+				rospy.logerr("Drive: Cannot start spinning now!")
+				self.response("Cannot start spinning now!", False)
+				self.is_spin = False
+			else:
+				rospy.loginfo("Drive: Start spinning!")
+				self.response("Start Spinning!", True)
+				self.is_spin = True
 		elif cmd == "停止旋转":
-			rospy.loginfo("Drive: Stop Spinning!")
+			if not self.canDrive():
+				rospy.logwarn("Drive: Cannot stop spinning now!")
+				self.response("It's moving now!", False)
+			else:
+				rospy.loginfo("Drive: Stop spinning!")
+				self.response("Stop Spinning!", True)
 			self.is_spin = False
 
 	def recieve_drive_cmd(self, msg):
@@ -49,7 +75,7 @@ class drive:
 		CLOCKWISE = 4
 		ANTICLOCKWISE = 5
 		'''
-		if self.rb_s.get_status() == rb.run and self.exp_s.get_status() == exp.move:
+		if not self.canDrive():
 			return
 		cmd = msg.type
 		move_cmd = Twist()
@@ -83,7 +109,9 @@ class drive:
 		The linear velocity and its difference is bounded by max_l and max_delta_l.
 		The angular velocity and its difference is bounded by max_a and max_delta_a.
 		'''
-		if self.rb_s.get_status() == rb.run and self.exp_s.get_status() == exp.move:
+		if not self.canDrive():
+			self.move_cmd = Twist()
+			self.spin = False
 			return
 		linear = max(min(linear, max_l), -max_l)
 		angular = max(min(angular, max_a), -max_a)

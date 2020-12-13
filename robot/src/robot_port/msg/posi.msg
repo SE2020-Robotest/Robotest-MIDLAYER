@@ -1,4 +1,4 @@
-int32 stamp
+float64 stamp
 float64 x
 float64 y
 float64 vx

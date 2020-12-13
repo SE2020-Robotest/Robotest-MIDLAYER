@@ -5,15 +5,20 @@ import rospy
 import geometry_msgs.msg
 from std_msgs.msg import String
 import tf
+from robot_port.msg import response
 
 class vmap_coordinate:
 	def __init__(self):
 		rospy.init_node('vmap_broadcaster', anonymous = False)
+		self.response_pub = rospy.Publisher('response', response, queue_size = 10)
 		rospy.Subscriber('mark_vmap', String, self.mark_vmap)
 
 		self.t = geometry_msgs.msg.TransformStamped()
 		self.marked = False
 		return
+
+	def response(self, discription, response):
+		self.response_pub.publish(rospy.Time.now().to_sec(), "vmap_broadcaster", discription, response)
 
 	def mark_vmap(self, msg):
 		if msg.data == "mark":
@@ -25,10 +30,11 @@ class vmap_coordinate:
 			listener.waitForTransform("/base_link", "/odom", rospy.Time(0),rospy.Duration(4.0)) # TODO: odom or map?
 			[trans,rot] = listener.lookupTransform("/odom", "/base_link", rospy.Time(0))
 		except rospy.ROSInterruptException:
-			return
+			return False
 		except Exception as e:
 			rospy.logerr("Vmap_broadcaster: Cannot get the Transform!\nDetails: %s", e)
-			return
+			self.response('Failed to mark the vmap!', False)
+			return False
 		self.t = geometry_msgs.msg.TransformStamped()
 		self.t.header.frame_id = 'odom'
 		self.t.header.stamp = rospy.Time.now()
@@ -41,6 +47,8 @@ class vmap_coordinate:
 		self.t.transform.rotation.z = rot[2]
 		self.t.transform.rotation.w = rot[3]
 		self.marked = True
+		self.response('Mark the vmap successfully!', True)
+		return True
 
 	def start(self):
 		m = tf.TransformBroadcaster()

@@ -1,2 +1,2 @@
-int32 stamp
+float64 stamp
 string cmd

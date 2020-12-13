@@ -3,6 +3,7 @@
     <param name="exp_status" value="waiting"/>
     <param name="TEST_MODE" value="True"/>
     <param name="connected" value="False"/>
+    <rosparam param="user_posi" >[-5, 50]</rosparam>
 
     <node pkg="robot_port" name="communicater" type="communicater.py" output="screen"/>
     <node pkg="robot_port" name="posi_publisher" type="posi_publisher.py" output="screen"/>

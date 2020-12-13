@@ -36,6 +36,10 @@ message VoiceStr{
     double timestamp = 2;
 }
 
+message LogStr{
+	string log = 1;
+}
+
 // virtual block
 message Block{
     // block type
@@ -94,6 +98,7 @@ service MsgServices{
     rpc RobotPath(RBPath) returns (Response);
     rpc SendVoiceFile(stream VoiceData) returns (Response);
     rpc VoiceResult(VoiceStr) returns (Response);
+    rpc Log(LogStr) returns (Response);
     rpc ControlCommand(ControlCmd) returns (Response);
     rpc RobotFinished(Response) returns (Response);
 	rpc DriveRobot(Drive) returns (Response);

@@ -59,13 +59,17 @@ class communicater:
 			print "The IP of Robot Port is:", IP
 			print "The Port of Robot Port is:", msg_client.receiverAddr["Robot"]["Port"]
 			IP = String(raw_input("Please input the IP of Control Port:"))
-			msg_client.receiverAddr["Ctrl"]["IP"] = IP
+			if IP != "":
+				msg_client.receiverAddr["Ctrl"]["IP"] = IP
 			port = String(raw_input("Please input the Port of Control Port:"))
-			msg_client.receiverAddr["Ctrl"]["Port"] = port
+			if port != "":
+				msg_client.receiverAddr["Ctrl"]["Port"] = port
 			IP = String(raw_input("Please input the IP of AR Port:"))
-			msg_client.receiverAddr["AR"]["IP"] = IP
+			if IP != "":
+				msg_client.receiverAddr["AR"]["IP"] = IP
 			port = String(raw_input("Please input the Port of AR Port:"))
-			msg_client.receiverAddr["AR"]["Port"] = port
+			if port != "":
+				msg_client.receiverAddr["AR"]["Port"] = port
 		
 		receive_srv = msg_server.RobotServicer(self.receive_map, self.receive_command, self.receive_voice, self.receive_drive_command)
 		try:
@@ -161,8 +165,8 @@ class communicater:
 			string cmd
 		'''
 		connected = bool(rospy.get_param("connected"))
-		if self.TEST_MODE or not connected:
-			return
+		#if self.TEST_MODE or not connected:
+		#	return
 		try:
 			msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
 		except Exception as e:

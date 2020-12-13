@@ -1,7 +1,14 @@
 # Robotest-MIDLAYER
 ## 机器人端相关代码
 
-### 运行流程：
+### 运行流程:
+#### 测试:
+```
+roscore  
+roslaunch turtlebot_gazebo turtlebot_world.launch  
+roslaunch robot_port test.launch #测试  
+```
+#### 运行:
 ```
 roscore  
 rosrun rviz rviz -d `rospack find hls_lfcd_lds_driver`/rviz/hlds_laser.rviz #可有可无  
@@ -9,7 +16,6 @@ sudo chmod a+rw /dev/ttyUSB0
 roslaunch turtlebot_bringup minimal.launch  
 roslaunch turtlebot_navigation gmapping_demo.launch  
 roslaunch robot_port robot_port.launch #正式运行  
-roslaunch robot_port test.launch #测试  
 rosrun map_server map_saver -f ~/map #保存地图
 ```
 

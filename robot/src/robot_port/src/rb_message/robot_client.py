@@ -123,6 +123,20 @@ def sendResponseMsg(receiver, status):
     print("Send Robot Finished Feedback" + "{}".format(response.status))
     return response.status
 
+def sendLogMsg(receiver, logstr):
+    '''
+    description: this function send log message to the receiver.
+    param{str}: receiver
+    param{str}: logstr: the message
+    return {int} feedback response status
+    '''
+    address = getAddr(receiver)
+    channel = grpc.insecure_channel(address)
+    stub = msg_pb2_grpc.MsgServicesStub(channel)
+    resultmsg = msg_pb2.LogStr(log = logstr)
+    response = stub.Log(resultmsg)
+    return response.status
+
 
 if __name__ == "__main__":
     sendRBPosition("Ctrl", point=[3., 5.], angle=4.6,

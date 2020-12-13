@@ -39,6 +39,11 @@ class MsgServicesStub(object):
                 request_serializer=msg__pb2.VoiceStr.SerializeToString,
                 response_deserializer=msg__pb2.Response.FromString,
                 )
+        self.Log = channel.unary_unary(
+                '/msg.MsgServices/Log',
+                request_serializer=msg__pb2.LogStr.SerializeToString,
+                response_deserializer=msg__pb2.Response.FromString,
+                )
         self.ControlCommand = channel.unary_unary(
                 '/msg.MsgServices/ControlCommand',
                 request_serializer=msg__pb2.ControlCmd.SerializeToString,
@@ -89,6 +94,12 @@ class MsgServicesServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Log(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def ControlCommand(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -133,6 +144,11 @@ def add_MsgServicesServicer_to_server(servicer, server):
             'VoiceResult': grpc.unary_unary_rpc_method_handler(
                     servicer.VoiceResult,
                     request_deserializer=msg__pb2.VoiceStr.FromString,
+                    response_serializer=msg__pb2.Response.SerializeToString,
+            ),
+            'Log': grpc.unary_unary_rpc_method_handler(
+                    servicer.Log,
+                    request_deserializer=msg__pb2.LogStr.FromString,
                     response_serializer=msg__pb2.Response.SerializeToString,
             ),
             'ControlCommand': grpc.unary_unary_rpc_method_handler(
@@ -241,6 +257,23 @@ class MsgServices(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/msg.MsgServices/VoiceResult',
             msg__pb2.VoiceStr.SerializeToString,
+            msg__pb2.Response.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Log(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/msg.MsgServices/Log',
+            msg__pb2.LogStr.SerializeToString,
             msg__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

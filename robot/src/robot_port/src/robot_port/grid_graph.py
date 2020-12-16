@@ -25,7 +25,8 @@ class v_type(Enum):
 
 class grid_graph:
 
-	def __init__(self, w = 100, h = 100):
+	def __init__(self, w = 100, h = 100, log = None):
+		self.log = log
 		self.i_range = int(h / delta)
 		self.j_range = int(w / delta)
 		self.N = self.j_range * self.i_range
@@ -204,16 +205,16 @@ class grid_graph:
 		# Correct the point
 		if not self.is_empt(pi, pj):
 			[pi, pj] = self.correct_point_index(pi, pj) # correct the origin
-			if __name__ == '__main__':
+			if self.log is None:
 				print "Navi: The origin is illegal!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(px, py, pj * delta, pi * delta)
 			else:
-				logwarn("Navi: The origin is illegal!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(px, py, pj * delta, pi * delta))
+				self.log.logwarn("Navi: The origin is illegal!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(px, py, pj * delta, pi * delta))
 		if not self.is_empt(qi, qj):
 			[qi, qj] = self.correct_point_index(qi, qj) # correct the destination
-			if __name__ == '__main__':
+			if self.log is None:
 				print "Navi: The destination is illegal!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(qx, qy, qj * delta, qi * delta)
 			else:
-				logwarn("Navi: The destination is illegal!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(qx, qy, qj * delta, qi * delta))
+				self.log.logwarn("Navi: The destination is illegal!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(qx, qy, qj * delta, qi * delta))
 			qx = qj*delta
 			qy = qi*delta
 
@@ -221,10 +222,10 @@ class grid_graph:
 		if len(path) == 0:
 			return path
 		if target != self.index1(qi, qj):
-			if __name__ == '__main__':
+			if self.log is None:
 				print "Navi: The destination is not accessible!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(qx, qy, path[-1][0], path[-1][1])
 			else:
-				logwarn("Navi: The destination is not accessible!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(qx, qy, path[-1][0], path[-1][1]))
+				self.log.logwarn("Navi: The destination is not accessible!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(qx, qy, path[-1][0], path[-1][1]))
 		else:
 			path[-1] = [qx, qy] # destination
 		return path

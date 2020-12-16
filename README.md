@@ -1,7 +1,14 @@
 # Robotest-MIDLAYER
 ## 机器人端相关代码
 
-### 运行流程：
+### 运行流程:
+#### 测试:
+```
+roscore  
+roslaunch turtlebot_gazebo turtlebot_world.launch  
+roslaunch robot_port test.launch #测试  
+```
+#### 运行:
 ```
 roscore  
 rosrun rviz rviz -d `rospack find hls_lfcd_lds_driver`/rviz/hlds_laser.rviz #可有可无  
@@ -9,7 +16,6 @@ sudo chmod a+rw /dev/ttyUSB0
 roslaunch turtlebot_bringup minimal.launch  
 roslaunch turtlebot_navigation gmapping_demo.launch  
 roslaunch robot_port robot_port.launch #正式运行  
-roslaunch robot_port test.launch #测试  
 rosrun map_server map_saver -f ~/map #保存地图
 ```
 
@@ -86,7 +92,7 @@ Robotest-MIDLAYER/robot/src/robot_port/scripts:
 >start exp: 强制将状态设置为initializing  
 >run exp: 强制将状态设置为running  
 >stop exp: 强制将状态设置为sleeping  
->load map: 加载预置的一张地图 
+>load map: 加载预置的一张地图   
 >move_dst test: 发送一个预置的目的地到navi节点，让机器人移动过去  
 >move_path test: 发送一段预置的路径到navi节点，让机器人沿路径移动过去。最好先保证机器人位于地图的右上角  
 

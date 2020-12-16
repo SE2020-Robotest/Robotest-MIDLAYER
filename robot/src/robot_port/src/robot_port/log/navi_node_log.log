@@ -1,0 +1,61 @@
+2020-12-17 01:22:16 [INFO] Navi: Navigation Node Initialized!
+2020-12-17 01:22:25 [INFO] Navi: Loading the map
+2020-12-17 01:22:26 [WARN] Navi: Current position in the virtual map is illegal!
+2020-12-17 01:22:26 [INFO] Navi: Automatically move to 0.0, 0.0
+2020-12-17 01:22:26 [INFO] Navi: Load the map successfully!
+2020-12-17 01:22:31 [WARN] Navi: The origin is illegal!
+Automatically correct it from (0.0319551907254, -0.0458902236333) to (0.0, 0.0)
+2020-12-17 01:22:32 [INFO] Navi: Found the path!
+2020-12-17 01:22:32 [INFO] Navi: Start moving!
+2020-12-17 01:22:48 [INFO] Navi: Arrive at destination!
+2020-12-17 01:22:51 [INFO] Navi: Found the path!
+2020-12-17 01:22:51 [INFO] Navi: Start moving!
+2020-12-17 01:23:40 [INFO] Navi: Arrive at destination!
+2020-12-17 01:23:43 [INFO] Navi: Face to user successfully!
+2020-12-17 01:23:43 [WARN] Navi: The destination is illegal!
+Automatically correct it from (250.0, 350.0) to (250.0, 315.0)
+2020-12-17 01:23:43 [WARN] Navi: The destination is illegal!
+Automatically correct it from (150.0, 150.0) to (150.0, 180.0)
+2020-12-17 01:23:44 [WARN] Navi: The destination is illegal!
+Automatically correct it from (100.0, 100.0) to (60.0, 100.0)
+2020-12-17 01:23:44 [INFO] Navi: Finished correcting the path!
+2020-12-17 01:23:44 [INFO] Navi: Start moving!
+2020-12-17 01:24:48 [INFO] Navi: Arrive at destination!
+2020-12-17 01:24:48 [INFO] Navi: Found the path!
+2020-12-17 01:24:48 [INFO] Navi: Start moving!
+2020-12-17 01:25:24 [INFO] Navi: Arrive at destination!
+2020-12-17 01:25:24 [WARN] Navi: The destination is illegal!
+Automatically correct it from (-30, 60) to (0.0, 35.0)
+2020-12-17 01:25:25 [INFO] Navi: Found the path to the user!
+2020-12-17 01:25:25 [INFO] Navi: Move to [56.021193376384105, 163.98064482597363]!
+2020-12-17 01:25:25 [INFO] Navi: Start moving!
+2020-12-17 01:25:34 [INFO] Navi: Move to user successfully!
+2020-12-17 01:25:37 [INFO] Navi: Loading the map
+2020-12-17 01:25:37 [ERROR] Navi: Cannot init the map! The Exp hasn't been initialized.
+2020-12-17 01:25:38 [ERROR] Navi: Failed to face to user!
+2020-12-17 01:25:38 [ERROR] Navi: Failed to move to user!
+2020-12-17 01:25:39 [ERROR] Navi: Failed to face to user!
+2020-12-17 01:25:39 [ERROR] Navi: Failed to move to user!
+2020-12-17 01:25:39 [INFO] Navi: Loading the map
+2020-12-17 01:25:41 [INFO] Navi: Load the map successfully!
+2020-12-17 01:25:47 [INFO] Navi: Found the path!
+2020-12-17 01:25:47 [INFO] Navi: Start moving!
+2020-12-17 01:26:24 [INFO] Navi: Arrive at destination!
+2020-12-17 01:26:26 [WARN] Navi: The origin is illegal!
+Automatically correct it from (0.316210374765, -1.69517314685e-05) to (0.0, 0.0)
+2020-12-17 01:26:27 [INFO] Navi: Found the path!
+2020-12-17 01:26:27 [INFO] Navi: Start moving!
+2020-12-17 01:26:31 [ERROR] Navi: Failed to achieve destination!
+2020-12-17 01:26:34 [INFO] Navi: Loading the map
+2020-12-17 01:26:35 [INFO] Navi: Load the map successfully!
+2020-12-17 01:26:36 [ERROR] Navi: Failed to face to user!
+2020-12-17 01:26:38 [INFO] Navi: Loading the map
+2020-12-17 01:26:39 [INFO] Navi: Load the map successfully!
+2020-12-17 01:26:41 [ERROR] Navi: Failed to move to user!
+2020-12-17 01:26:48 [INFO] Navi: Loading the map
+2020-12-17 01:26:49 [INFO] Navi: Load the map successfully!
+2020-12-17 01:26:50 [WARN] Navi: The destination is not accessible!
+Automatically correct it from (0.0, 399.0) to (0.0, 265.0)
+2020-12-17 01:26:50 [INFO] Navi: Found the path!
+2020-12-17 01:26:50 [INFO] Navi: Start moving!
+2020-12-17 01:27:16 [INFO] Navi: Arrive at destination!

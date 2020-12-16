@@ -4,8 +4,9 @@
 import thread
 import rospy
 import socket
-from status import rb, exp
-from enum_list import *
+from robot_port.status import rb, exp
+from robot_port.log import log
+from robot_port.enum_list import *
 from std_msgs.msg import String
 from robot_port.msg import posi
 from robot_port.msg import path_ori
@@ -26,7 +27,6 @@ def get_host_ip():
 		ip = s.getsockname()[0]
 	finally:
 		s.close()
-
 	return ip
 
 class communicater:
@@ -37,6 +37,7 @@ class communicater:
 		# Members
 		self.rb_s = rb()
 		self.exp_s = exp()
+		self.my_log = log()
 
 		#Publisher and Subscriber
 		self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
@@ -48,38 +49,78 @@ class communicater:
 		rospy.Subscriber('path', path, self.send_rb_path)
 		rospy.Subscriber('voice_cmd', voice_cmd, self.send_rb_voice_cmd)
 		rospy.Subscriber('response_to_ctrl', enum_type, self.send_response_to_ctrl)
-
-		status = self.rb_s.get_status()
-		rospy.loginfo("Communicater: The robot_status now is %s.", status)
+		rospy.Subscriber('log_msg', String, self.send_log_msg)
 
 		self.TEST_MODE = bool(rospy.get_param("TEST_MODE"))
 		if not self.TEST_MODE:
-			IP = get_host_ip()
-			msg_client.receiverAddr["Robot"]["IP"] = IP
-			print "The IP of Robot Port is:", IP
-			print "The Port of Robot Port is:", msg_client.receiverAddr["Robot"]["Port"]
-			IP = String(raw_input("Please input the IP of Control Port:"))
-			msg_client.receiverAddr["Ctrl"]["IP"] = IP
-			port = String(raw_input("Please input the Port of Control Port:"))
-			msg_client.receiverAddr["Ctrl"]["Port"] = port
-			IP = String(raw_input("Please input the IP of AR Port:"))
-			msg_client.receiverAddr["AR"]["IP"] = IP
-			port = String(raw_input("Please input the Port of AR Port:"))
-			msg_client.receiverAddr["AR"]["Port"] = port
-		
+			try:
+				self.set_IP()
+			except Exception as e:
+				self.my_log.logerr("Cannot set the IP and Port of other ports!\nDetails: %s", e)
 		receive_srv = msg_server.RobotServicer(self.receive_map, self.receive_command, self.receive_voice, self.receive_drive_command)
 		try:
 			thread.start_new_thread(msg_server.serve, (receive_srv, ))
-			rospy.loginfo("Communicater: Receiving service Initialized!")
+			self.my_log.loginfo("Communicater: Receiving service Initialized!")
 		except:
-			rospy.logerr("Communicater: Unable to start the receiving service thread!")
+			self.my_log.logerr("Communicater: Unable to start the receiving service thread!")
 			self.init_ok = False
 			return
 
 		self.TEST_MODE = bool(rospy.get_param("TEST_MODE"))
-		rospy.loginfo("Communicater: Communicate Node Initialized!")
+		self.my_log.loginfo("Communicater: Communicate Node Initialized!")
 		self.init_ok = True
 		return
+
+	def input_IP(self):
+		IP = str(raw_input("Please input the IP of Control Port:"))
+		if IP != "":
+			msg_client.receiverAddr["Ctrl"]["IP"] = IP
+		port = int(raw_input("Please input the Port of Control Port:"))
+		if port != "":
+			msg_client.receiverAddr["Ctrl"]["Port"] = port
+		IP = str(raw_input("Please input the IP of AR Port:"))
+		if IP != "":
+			msg_client.receiverAddr["AR"]["IP"] = IP
+		port = int(raw_input("Please input the Port of AR Port:"))
+		if port != "":
+			msg_client.receiverAddr["AR"]["Port"] = port
+
+	def read_IP(self, path):
+		with open(path, "r") as f:
+			settings = f.readlines()
+			if len(settings) < 4:
+				self.write_IP(path)
+				return
+			msg_client.receiverAddr["Ctrl"]["IP"] = settings[0][:-1]
+			msg_client.receiverAddr["Ctrl"]["Port"] = settings[1][:-1]
+			msg_client.receiverAddr["AR"]["IP"] = settings[2][:-1]
+			msg_client.receiverAddr["AR"]["Port"] = settings[3]
+
+	def write_IP(self, path):
+		with open(path, "w") as f:
+			f.write(msg_client.receiverAddr["Ctrl"]["IP"] + "\n")
+			f.write(str(msg_client.receiverAddr["Ctrl"]["Port"]) + "\n")
+			f.write(msg_client.receiverAddr["AR"]["IP"] + "\n")
+			f.write(str(msg_client.receiverAddr["AR"]["Port"]))
+
+	def set_IP(self):
+		import os
+		path = str(os.path.dirname(os.path.realpath(__file__)) + "/IP.txt")
+		IP = get_host_ip()
+		msg_client.receiverAddr["Robot"]["IP"] = IP
+		print "The IP of Robot Port is:", IP
+		print "The Port of Robot Port is:", msg_client.receiverAddr["Robot"]["Port"]
+		try:
+			self.read_IP(path)
+		except IOError:
+			self.write_IP(path)
+		print "The IP of Control Port is:", msg_client.receiverAddr["Ctrl"]["IP"]
+		print "The Port of Control Port is:", msg_client.receiverAddr["Ctrl"]["Port"]
+		print "The IP of AR Port is:", msg_client.receiverAddr["AR"]["IP"]
+		print "The Port of AR Port is:", msg_client.receiverAddr["AR"]["Port"]
+		if str(raw_input("Do you want to change it? [y/n]:")) in ["y", "yes", "Yes", "YES"]:
+			self.input_IP()
+			self.write_IP(path)
 
 	def start(self):
 		rospy.spin()
@@ -101,12 +142,13 @@ class communicater:
 			msg_client.sendRBPosition("Ctrl", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
 			# print rospy.Time.now().to_sec() - msg.stamp
 		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
+			self.my_log.logerr("Communicater: Failed to send the position! Cannot connect to Control port! Details:\n %s", e)
+			rospy.set_param("connected", False)
 		'''
 		try:
 			msg_client.sendRBPosition("AR", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
 		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to AR port! Details:\n %s", e)
+			self.my_log.logerr("Communicater: Failed to send the position! Cannot connect to AR port! Details:\n %s", e)
 		'''
 		return
 
@@ -129,7 +171,8 @@ class communicater:
 		try:
 			msg_client.sendRBPath("Ctrl", path, msg.start_time, msg.end_time)
 		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to Control port! Details:\n %s", e)
+			self.my_log.logerr("Communicater: Failed to send the original path! Cannot connect to Control port! Details:\n %s", e)
+			rospy.set_param("connected", False)
 		return
 
 	def send_rb_path(self, msg):
@@ -151,7 +194,8 @@ class communicater:
 		try:
 			msg_client.sendRBPath("Ctrl", path)
 		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to Control port!\nDetails: %s", e)
+			self.my_log.logerr("Communicater: Failed to send the path! Cannot connect to Control port!\nDetails: %s", e)
+			rospy.set_param("connected", False)
 		return
 
 	def send_rb_voice_cmd(self, msg):
@@ -166,11 +210,12 @@ class communicater:
 		try:
 			msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
 		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to AR port!\nDetails: %s", e)
+			self.my_log.logerr("Communicater: Failed to send the voice cmd! Cannot connect to AR port!\nDetails: %s", e)
 		try:
 			msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
 		except Exception as e:
-			rospy.logerr("Communicater: Cannot connect to Control port!\nDetails: %s", e)
+			self.my_log.logerr("Communicater: Failed to send the voice cmd! Cannot connect to Control port!\nDetails: %s", e)
+			rospy.set_param("connected", False)
 		return
 
 	def send_response_to_ctrl(self, msg):
@@ -182,11 +227,27 @@ class communicater:
 		connected = bool(rospy.get_param("connected"))
 		if self.TEST_MODE or not connected:
 			return
-		print msg.type
 		try:
 			msg_client.sendResponseMsg("Ctrl", msg.type)
 		except Exception as e:
-			rospy.logerr("Communicater: Failed to send the response! Cannot connect to Control port!\nDetails: %s", e)
+			self.my_log.logerr("Communicater: Failed to send the response! Cannot connect to Control port!\nDetails: %s", e)
+			rospy.set_param("connected", False)
+		return
+
+	def send_log_msg(self, msg):
+		'''
+		voice_cmd:
+			int32 stamp
+			string cmd
+		'''
+		connected = bool(rospy.get_param("connected"))
+		if self.TEST_MODE or not connected:
+			return
+		try:
+			msg_client.sendLogMsg("Ctrl", msg.data)
+		except Exception as e:
+			rospy.logerr("Communicater: Failed to send the log msg! Cannot connect to Control port!\nDetails: %s", e)
+			rospy.set_param("connected", False)
 		return
 
 	def receive_map(self, request, context):
@@ -205,10 +266,10 @@ class communicater:
 		'''
 		status = self.rb_s.get_status()
 		if status == rb.sleep:
-			rospy.logerr("Communicater: Cannot init the map. The Exp hasn't started yet!")
+			self.my_log.logerr("Communicater: Cannot init the map. The Exp hasn't started yet!")
 			return 0
 		elif status != rb.init:
-			rospy.logerr("Communicater: Cannot init the map. There is an Exp running now!")
+			self.my_log.logerr("Communicater: Cannot init the map. There is an Exp running now!")
 			return 0
 		obj = []
 		for block in request.blocks:
@@ -222,20 +283,20 @@ class communicater:
 		if cmd == START: # start the exp
 			if status == rb.sleep:
 				self.rb_s.Start()
-				rospy.loginfo("Communicater: Start initializing the Exp.")
+				self.my_log.loginfo("Communicater: Start initializing the Exp.")
 			else:
-				rospy.logerr("Communicater: Cannot start the Exp. There is an Exp running now!")
+				self.my_log.logerr("Communicater: Cannot start the Exp. There is an Exp running now!")
 		elif cmd == STOP: # stop the exp
 			if status != rb.sleep:
 				self.exp_s.Wait()
 				self.rb_s.Stop()
 				self.stop_pub.publish(True)
-				rospy.loginfo("Communicater: Stop the Exp successfully!")
+				self.my_log.loginfo("Communicater: Stop the Exp successfully!")
 			else:
-				rospy.logwarn("Communicater: Cannot stop the Exp. The Exp hasn't started yet!")
+				self.my_log.logwarn("Communicater: Cannot stop the Exp. The Exp hasn't started yet!")
 		elif cmd == CONNECT:
 			rospy.set_param("connected", True)
-			rospy.loginfo("Build connect") # build connect
+			self.my_log.loginfo("Build connect") # build connect
 		else:
 			return 1
 		return 0

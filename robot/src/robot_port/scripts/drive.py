@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from status import rb, exp
-from enum_list import *
+from robot_port.status import rb, exp
+from robot_port.log import log
+from robot_port.enum_list import *
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist
 from robot_port.msg import voice_cmd
 from robot_port.msg import enum_type
@@ -16,6 +17,7 @@ class drive:
 
 		self.rb_s = rb()
 		self.exp_s = exp()
+		self.my_log = log()
 
 		self.move_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
 		self.response_pub = rospy.Publisher('response', response, queue_size = 10)
@@ -26,7 +28,7 @@ class drive:
 		rospy.Subscriber('stop_exp', stop, self.stop_exp)
 
 		self.is_spin = False
-		rospy.loginfo("Drive: Drive Node Initialized!")
+		self.my_log.loginfo("Drive: Drive Node Initialized!")
 		return
 
 	def stop_exp(self, msg):
@@ -50,19 +52,19 @@ class drive:
 		cmd = msg.cmd
 		if cmd == "旋转":
 			if not self.canDrive():
-				rospy.logerr("Drive: Cannot start spinning now!")
+				self.my_log.logerr("Drive: Cannot start spinning now!")
 				self.response("Cannot start spinning now!", False)
 				self.is_spin = False
 			else:
-				rospy.loginfo("Drive: Start spinning!")
+				self.my_log.loginfo("Drive: Start spinning!")
 				self.response("Start Spinning!", True)
 				self.is_spin = True
 		elif cmd == "停止旋转":
 			if not self.canDrive():
-				rospy.logwarn("Drive: Cannot stop spinning now!")
+				self.my_log.logwarn("Drive: Cannot stop spinning now!")
 				self.response("It's moving now!", False)
 			else:
-				rospy.loginfo("Drive: Stop spinning!")
+				self.my_log.loginfo("Drive: Stop spinning!")
 				self.response("Stop Spinning!", True)
 			self.is_spin = False
 
@@ -80,7 +82,7 @@ class drive:
 		cmd = msg.type
 		move_cmd = Twist()
 		if self.is_spin:
-			rospy.logerr("Drive: Spinning now! Please stop spinning first.")
+			self.my_log.logerr("Drive: Spinning now! Please stop spinning first.")
 			return
 		linear = 0
 		angular = 0

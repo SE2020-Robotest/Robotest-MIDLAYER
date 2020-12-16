@@ -2,9 +2,10 @@
 
 
 import rospy
+import tf
+from robot_port.log import log
 import geometry_msgs.msg
 from std_msgs.msg import String
-import tf
 from robot_port.msg import response
 
 class vmap_coordinate:
@@ -15,6 +16,7 @@ class vmap_coordinate:
 
 		self.t = geometry_msgs.msg.TransformStamped()
 		self.marked = False
+		self.my_log = log()
 		return
 
 	def response(self, discription, response):
@@ -32,7 +34,7 @@ class vmap_coordinate:
 		except rospy.ROSInterruptException:
 			return False
 		except Exception as e:
-			rospy.logerr("Vmap_broadcaster: Cannot get the Transform!\nDetails: %s", e)
+			self.my_log.logerr("Vmap_broadcaster: Cannot get the Transform!\nDetails: %s", e)
 			self.response('Failed to mark the vmap!', False)
 			return False
 		self.t = geometry_msgs.msg.TransformStamped()

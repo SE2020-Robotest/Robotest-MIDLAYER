@@ -16,15 +16,15 @@ import msg_pb2_grpc
 
 receiverAddr = {
     "AR": {
-        "IP": "183.173.87.25",
-        "Port": 8888
+        "IP": "172.20.10.4",
+        "Port": 8960
     },
     "Ctrl": {
         "IP": "172.20.10.3",
         "Port": 8889
     },
     "Robot": {
-        "IP": "183.173.49.163",
+        "IP": "172.20.10.2",
         "Port": 8888
     }
 }
@@ -121,6 +121,20 @@ def sendResponseMsg(receiver, status):
     resultmsg = msg_pb2.Response(status = status)
     response = stub.RobotFinished(resultmsg)
     print("Send Robot Finished Feedback" + "{}".format(response.status))
+    return response.status
+
+def sendLogMsg(receiver, logstr):
+    '''
+    description: this function send log message to the receiver.
+    param{str}: receiver
+    param{str}: logstr: the message
+    return {int} feedback response status
+    '''
+    address = getAddr(receiver)
+    channel = grpc.insecure_channel(address)
+    stub = msg_pb2_grpc.MsgServicesStub(channel)
+    resultmsg = msg_pb2.LogStr(log = logstr)
+    response = stub.Log(resultmsg)
     return response.status
 
 

@@ -5,17 +5,17 @@ import rospy
 from std_msgs.msg import String
 from robot_port.msg import voice_cmd
 from robot_port.msg import path_ori
-from robot_port.msg import path
+from robot_port.msg import path as path_now
 from robot_port.msg import point_2d
 from robot_port.msg import map_object
 from robot_port.msg import vmap
-import status
+import robot_port.status as status
 
 
 class fake_cmd:
 	def __init__(self):
 		self.voice_pub = rospy.Publisher('voice_cmd', voice_cmd, queue_size = 10)
-		self.path_pub = rospy.Publisher('path', path, queue_size = 10)
+		self.path_pub = rospy.Publisher('path', path_now, queue_size = 10)
 		self.path_ori_pub = rospy.Publisher('path_ori', path_ori, queue_size = 10)
 		self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
 		self.dst_pub = rospy.Publisher('dst', point_2d, queue_size = 5)
@@ -39,7 +39,7 @@ class fake_cmd:
 				'''
 				rospy.loginfo("Fake_cmd: Start the communication test!")
 				p_o = path_ori(10, 100, [point_2d(0.0, 0.0), point_2d(10.0, 10.0), point_2d(100.0, 100.0)])
-				p = path([point_2d(0.0, 0.0), point_2d(20.0, 20.0), point_2d(50.0, 50.0)])
+				p = path_now([point_2d(0.0, 0.0), point_2d(20.0, 20.0), point_2d(50.0, 50.0)])
 				self.path_pub.publish(p)
 				self.path_ori_pub.publish(p_o)
 			elif s == "load map":

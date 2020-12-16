@@ -23,14 +23,14 @@ Port = 8888
 
 class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
 
-    def __init__(self, reciveMap, reciveCommand, reciveVoice, reciveDriveCommand):
+    def __init__(self, receiveMap, receiveCommand, receiveVoice, receiveDriveCommand):
         '''
         The following are callback function for handling the message
         '''
-        self.reciveMap = reciveMap
-        self.reciveCommand = reciveCommand
-        self.reciveVoice = reciveVoice
-        self.reciveDriveCommand = reciveDriveCommand
+        self.receiveMap = receiveMap
+        self.receiveCommand = receiveCommand
+        self.receiveVoice = receiveVoice
+        self.receiveDriveCommand = receiveDriveCommand
         return
 
     def ConfigMap(self, request, context):
@@ -54,9 +54,9 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
                 block.type, block.w, block.h, block.pos.posx, block.pos.posy))
 
         # if the reqeust message goes wrong, please modify the status to 1
-        if self.reciveMap is not None:
+        if self.receiveMap is not None:
             # The Callback function
-            return msg_pb2.Response(status=self.reciveMap(request, context))
+            return msg_pb2.Response(status=self.receiveMap(request, context))
         else:
             return msg_pb2.Response(status=0)
 
@@ -73,9 +73,9 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
         '''
         # The following code prints the received message
         # if the reqeust message goes wrong, please modify the status to 1
-        if self.reciveCommand is not None:
+        if self.receiveCommand is not None:
             # The Callback function
-            return msg_pb2.Response(status=self.reciveCommand(request, context))
+            return msg_pb2.Response(status=self.receiveCommand(request, context))
         else:
             return msg_pb2.Response(status=0)
 
@@ -103,9 +103,9 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
         for bytestr in request_iterator:
             print(bytestr.file)
         # if the reqeust message goes wrong, please modify the status to 1
-        if self.reciveVoice is not None:
+        if self.receiveVoice is not None:
             # The Callback function
-            return msg_pb2.Response(status=self.reciveVoice(request_iterator, context))
+            return msg_pb2.Response(status=self.receiveVoice(request_iterator, context))
         else:
             return msg_pb2.Response(status=0)
 
@@ -117,7 +117,7 @@ class RobotServicer(msg_pb2_grpc.MsgServicesServicer):
         param {*} context
         return {Response}
         '''
-        return msg_pb2.Response(status=self.reciveDriveCommand(response, context))
+        return msg_pb2.Response(status=self.receiveDriveCommand(response, context))
 
     """
     def RobotPath(self, request, context):

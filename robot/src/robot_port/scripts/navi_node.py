@@ -2,10 +2,11 @@
 
 
 import rospy
-from status import rb, exp
-from enum_list import *
-import grid_graph as graph
-from trans import trans
+from robot_port.status import rb, exp
+from robot_port.enum_list import *
+import robot_port.grid_graph as graph
+from robot_port.trans import trans
+from robot_port.log import log
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist
 from math import pi, atan2, sqrt, cos
 from enum import Enum
@@ -13,7 +14,7 @@ from tf.transformations import quaternion_from_euler
 from nav_msgs.msg import Odometry
 from robot_port.msg import map_object
 from robot_port.msg import vmap
-from robot_port.msg import path
+from robot_port.msg import path as path_now
 from robot_port.msg import path_ori
 from robot_port.msg import point_2d
 from robot_port.msg import voice_cmd
@@ -41,10 +42,11 @@ class navi_nodes:
 		self.rb_s = rb()
 		self.exp_s = exp()
 		self.trans = trans()
+		self.my_log = log()
 
 		self.move_cmd_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
 		self.move_cmd = Twist()
-		self.path_pub = rospy.Publisher('path', path, queue_size = 10)
+		self.path_pub = rospy.Publisher('path', path_now, queue_size = 10)
 		self.res_to_ctrl_pub = rospy.Publisher('response_to_ctrl', enum_type, queue_size = 10)
 		self.response_pub = rospy.Publisher('response', response, queue_size = 10)
 
@@ -53,7 +55,7 @@ class navi_nodes:
 		rospy.Subscriber('dst', point_2d, self.receieve_dst)
 		rospy.Subscriber('voice_cmd', voice_cmd, self.receive_voice)
 		
-		rospy.loginfo("Navi: Navigation Node Initialized!")
+		self.my_log.loginfo("Navi: Navigation Node Initialized!")
 		return
 
 	def start(self):
@@ -79,12 +81,12 @@ class navi_nodes:
 			map_object[] obj
 		'''
 		rb_status = self.rb_s.get_status()
-		rospy.loginfo("Navi: Loading the map")
+		self.my_log.loginfo("Navi: Loading the map")
 		if rb_status != rb.init:
-			rospy.logerr("Navi: Cannot init the map! The Exp hasn't been initialized.")
+			self.my_log.logerr("Navi: Cannot init the map! The Exp hasn't been initialized.")
 			self.response("Cannot init the map! The Exp hasn't been initialized.", False)
 			return
-		self.g = graph.grid_graph(msg.w, msg.h)
+		self.g = graph.grid_graph(msg.w, msg.h, self.my_log)
 		for obj in msg.obj:
 			if obj.type == CYLINDER:
 				self.g.add_circle(obj.x, obj.y, obj.w)
@@ -94,21 +96,21 @@ class navi_nodes:
 		try:
 			cur_p = self.trans.get_posi()
 		except rospy.exceptions.ROSException as e:
-			rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+			self.my_log.logerr("Navi: Cannot get the position!\nDetails: %s", e)
 			self.response("Cannot get the position!", False)
 			return
 		if not self.g.is_empt_coordinate(cur_p[0], cur_p[1]):
-			rospy.logwarn("Navi: Current position in the virtual map is illegal!")
+			self.my_log.logwarn("Navi: Current position in the virtual map is illegal!")
 			p = self.g.correct_point_coordinate(cur_p[0], cur_p[1])
-			rospy.loginfo("Navi: Automatically move to %s, %s", p[0], p[1])
+			self.my_log.loginfo("Navi: Automatically move to %s, %s", p[0], p[1])
 			if not self.move_to(p):
-				rospy.logerr("Navi: Cannot correct the position automatically!")
-				rospy.logerr("Navi: The Exp failed to initialize!")
+				self.my_log.logerr("Navi: Cannot correct the position automatically!")
+				self.my_log.logerr("Navi: The Exp failed to initialize!")
 				self.rb_s.Stop()
 				self.res_to_ctrl_pub.publish(ERROR)
 				self.response("Cannot correct the position automatically!", False)
 				return
-		rospy.loginfo("Navi: Load the map successfully!")
+		self.my_log.loginfo("Navi: Load the map successfully!")
 		self.res_to_ctrl_pub.publish(FINISHED)
 		self.rb_s.Run()								# (Important!) Change the status
 		self.response("Load the map successfully!", True)
@@ -140,14 +142,14 @@ class navi_nodes:
 		except rospy.ROSInterruptException:
 			return
 		except:
-			rospy.logerr("Navi: Cannot get the Robot's position!")
+			self.my_log.logerr("Navi: Cannot get the Robot's position!")
 			self.exp_s.Wait() 							# (Important!) Change the status
 			self.response("Cannot get the Robot's position!", False)
 			return
 		
 		if not self.g.is_empt_coordinate(px, py):
 			[tx, ty] = self.g.correct_point_coordinate(px, py) # correct the origin
-			rospy.logwarn("Navi: The origin is illegal!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(px, py, tx, ty))
+			self.my_log.logwarn("Navi: The origin is illegal!\nAutomatically correct it from (%s, %s) to (%s, %s)"%(px, py, tx, ty))
 			px = tx
 			py = ty
 		
@@ -156,12 +158,12 @@ class navi_nodes:
 			# Find path
 			path_tmp = self.g.find_path(path[-1][0], path[-1][1], p.x, p.y)
 			if len(path_tmp) == 0:
-				rospy.logerr("Navi: Cannot find the path!")
+				self.my_log.logerr("Navi: Cannot find the path!")
 				self.exp_s.Wait() 						# (Important!) Change the status
 				self.response("Cannot find the path!", False)
 				return
 			path += path_tmp
-		rospy.loginfo("Navi: Finished correcting the path!")
+		self.my_log.loginfo("Navi: Finished correcting the path!")
 
 		# Send path message
 		path_msg = []
@@ -170,14 +172,14 @@ class navi_nodes:
 		self.path_pub.publish(path_msg)
 
 		# Move to the destination
-		rospy.loginfo("Navi: Start moving!")
+		self.my_log.loginfo("Navi: Start moving!")
 		is_finished = self.move(path)
 		self.exp_s.Wait() 								# (Important!) Change the status
 		if is_finished:
-			rospy.loginfo("Navi: Arrive at destination!")
+			self.my_log.loginfo("Navi: Arrive at destination!")
 			self.response("Arrive at destination!", True)
 		else:
-			rospy.logerr("Navi: Failed to achieve destination!")
+			self.my_log.logerr("Navi: Failed to achieve destination!")
 			self.response("Failed to achieve destination!", False)
 		return
 
@@ -208,7 +210,7 @@ class navi_nodes:
 		except rospy.ROSInterruptException:
 			return
 		except:
-			rospy.logerr("Navi: Cannot get the Robot's position!")
+			self.my_log.logerr("Navi: Cannot get the Robot's position!")
 			self.exp_s.Wait() 						# (Important!) Change the status
 			self.response("Cannot get the Robot's position!", False)
 			return
@@ -216,11 +218,11 @@ class navi_nodes:
 		# Find path
 		path = self.g.find_path(px, py, qx, qy)
 		if len(path) == 0:
-			rospy.logerr("Navi: Cannot find the path!")
+			self.my_log.logerr("Navi: Cannot find the path!")
 			self.exp_s.Wait() 						# (Important!) Change the status
 			self.response("Cannot find the path!", False)
 			return
-		rospy.loginfo("Navi: Found the path!")
+		self.my_log.loginfo("Navi: Found the path!")
 
 		# Send path message
 		path_msg = []
@@ -230,14 +232,14 @@ class navi_nodes:
 		self.path_pub.publish(path_msg)
 
 		# Move to the destination
-		rospy.loginfo("Navi: Start moving!")
+		self.my_log.loginfo("Navi: Start moving!")
 		is_finished = self.move(path)
 		self.exp_s.Wait() 								# (Important!) Change the status
 		if is_finished:
-			rospy.loginfo("Navi: Arrive at destination!")
+			self.my_log.loginfo("Navi: Arrive at destination!")
 			self.response("Arrive at destination!", True)
 		else:
-			rospy.logerr("Navi: Failed to achieve destination!")
+			self.my_log.logerr("Navi: Failed to achieve destination!")
 			self.response("Failed to achieve destination!", False)
 		return
 
@@ -256,21 +258,31 @@ class navi_nodes:
 				self.response("Cannot move now!", False)
 			is_finished = self.move_to_user()
 			if is_finished:
-				rospy.loginfo("Navi: Move to user successfully!")
+				self.my_log.loginfo("Navi: Move to user successfully!")
 				self.response("", True)
 			else:
-				rospy.logerr("Navi: Failed to move to user!")
+				self.my_log.logerr("Navi: Failed to move to user!")
 				self.response("Failed to move to user!", False)
 		elif msg.cmd == 'look me':
 			if rb_status != rb.run or exp_status != exp.wait:
 				self.response("Cannot move now!", False)
 			is_finished = self.face_to_user()
 			if is_finished:
-				rospy.loginfo("Navi: Face to user successfully!")
+				self.my_log.loginfo("Navi: Face to user successfully!")
 				self.response("", True)
 			else:
-				rospy.logerr("Navi: Failed to face to user!")
+				self.my_log.logerr("Navi: Failed to face to user!")
 				self.response("Failed to face to user!", False)
+		elif msg.cmd == 'move to origin':
+			if rb_status != rb.run or exp_status != exp.wait:
+				self.response("Cannot move now!", False)
+			is_finished = self.move_to_origin_point()
+			if is_finished:
+				self.my_log.loginfo("Navi: Move to origin point successfully!")
+				self.response("", True)
+			else:
+				self.my_log.logerr("Navi: Failed to move to origin point!")
+				self.response("Failed to move to origin point!", False)
 
 	def pub_move_cmd(self, linear, angular):
 		'''
@@ -312,7 +324,7 @@ class navi_nodes:
 			try:
 				msg = self.trans.get_msg()
 			except rospy.exceptions.ROSException as e:
-				rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+				self.my_log.logerr("Navi: Cannot get the position!\nDetails: %s", e)
 				return False
 			
 			cur_p = self.trans.get_posi(msg)
@@ -334,7 +346,7 @@ class navi_nodes:
 		try:
 			msg = self.trans.get_msg()
 		except rospy.exceptions.ROSException as e:
-			rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+			self.my_log.logerr("Navi: Cannot get the position!\nDetails: %s", e)
 			return False
 
 		d = self.dist(p, self.trans.get_posi(msg))
@@ -353,7 +365,7 @@ class navi_nodes:
 			try:
 				msg = self.trans.get_msg()
 			except rospy.exceptions.ROSException as e:
-				rospy.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+				self.my_log.logerr("Navi: Cannot get the position!\nDetails: %s", e)
 				return False
 			
 			# Compute the distance to p and delta angle pointing to p
@@ -384,6 +396,12 @@ class navi_nodes:
 		print "Navi: Arrive at %s, %s"%(cur_p[0], cur_p[1])
 
 		return True
+
+	def move_to_origin_point(self):
+		if self.move_to([0, 0]):
+			return self.face_to([100, 0])
+		else:
+			return False
 
 	def get_user_posi(self):
 		p = rospy.get_param("user_posi")
@@ -420,7 +438,7 @@ class navi_nodes:
 		except rospy.ROSInterruptException:
 			return False
 		except:
-			rospy.logerr("Navi: Cannot get the Robot's position!")
+			self.my_log.logerr("Navi: Cannot get the Robot's position!")
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return False
 
@@ -450,17 +468,15 @@ class navi_nodes:
 			lam = max(d_user_min / self.dist(p1, p2), 1)
 			path[-1][0] = lam * p1[0] + (1 - lam) * p2[0]
 			path[-1][1] = lam * p1[1] + (1 - lam) * p2[1]
-		rospy.loginfo("Navi: Found the path to the user!")
-		rospy.loginfo("Navi: Move to %s!", path[-1])
+		self.my_log.loginfo("Navi: Found the path to the user!")
+		self.my_log.loginfo("Navi: Move to %s!", path[-1])
 		
 		# Move to the destination
-		rospy.loginfo("Navi: Start moving!")
+		self.my_log.loginfo("Navi: Start moving!")
 		if not self.move(path):
-			rospy.logerr("Navi: Failed to move to the user!")
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return False
 		if not self.face_to(p):
-			rospy.logerr("Navi: Failed to face to the user!")
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return False
 		self.exp_s.Wait() 							# (Important!) Change the status

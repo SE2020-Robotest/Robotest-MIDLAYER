@@ -39,6 +39,6 @@ delta = 5.0 # grid size
 graph_mode = SMOOTH
 
 # Navi: move_to_user
-d_user_min = 50		#the minimal distance to the user while recogniting
-d_user_max = 100	#the maximal distance to the user while recogniting
+d_user_min = 100		#the minimal distance to the user while recogniting
+d_user_max = 200	#the maximal distance to the user while recogniting
 

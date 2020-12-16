@@ -1,0 +1,184 @@
+2020-12-17 01:22:15 [INFO] Communicater: Receiving service Initialized!
+2020-12-17 01:22:15 [INFO] Communicater: Communicate Node Initialized!
+2020-12-17 01:22:16 [INFO] Navi: Navigation Node Initialized!
+2020-12-17 01:22:24 [INFO] Test: Unit test starting!
+2020-12-17 01:22:24 [INFO] Test: Priority Queue test pass!
+2020-12-17 01:22:24 [INFO] Test: Status test pass!
+2020-12-17 01:22:24 [INFO] Test: Grid_graph test pass!
+2020-12-17 01:22:24 [INFO] Test: TF transform test!
+2020-12-17 01:22:24 [INFO] Test: TF transform between vmap and odom test pass!
+2020-12-17 01:22:24 [INFO] Test: TF transform between vmap and base_link test pass!
+2020-12-17 01:22:24 [INFO] Test: TF transform between odom and base_link test pass!
+2020-12-17 01:22:24 [INFO] Test: Start the Exp!
+2020-12-17 01:22:25 [INFO] Test: Status test pass!
+2020-12-17 01:22:25 [INFO] Test: Start the Exp successfully!
+2020-12-17 01:22:25 [INFO] Test: Load the map!
+2020-12-17 01:22:25 [INFO] Navi: Loading the map
+2020-12-17 01:22:26 [WARN] Navi: Current position in the virtual map is illegal!
+2020-12-17 01:22:26 [INFO] Navi: Automatically move to 0.0, 0.0
+2020-12-17 01:22:26 [INFO] Navi: Load the map successfully!
+2020-12-17 01:22:26 [INFO] Test: Status test pass!
+2020-12-17 01:22:26 [INFO] Test: Load the map successfully!
+2020-12-17 01:22:26 [INFO] Test: Spin!
+2020-12-17 01:22:26 [INFO] Drive: Start spinning!
+2020-12-17 01:22:29 [INFO] Test: Spin successfully!
+2020-12-17 01:22:29 [INFO] Test: Stop spinning!
+2020-12-17 01:22:29 [INFO] Drive: Stop spinning!
+2020-12-17 01:22:31 [INFO] Test: Stop spinning successfully!
+2020-12-17 01:22:31 [INFO] Test: Move to [299, 0]!
+2020-12-17 01:22:31 [WARN] Navi: The origin is illegal!
+Automatically correct it from (0.0319551907254, -0.0458902236333) to (0.0, 0.0)
+2020-12-17 01:22:32 [INFO] Navi: Found the path!
+2020-12-17 01:22:32 [INFO] Navi: Start moving!
+2020-12-17 01:22:48 [INFO] Navi: Arrive at destination!
+2020-12-17 01:22:48 [INFO] Test: Status test pass!
+2020-12-17 01:22:48 [INFO] Test: Arrive at [299, 0] successfully!
+2020-12-17 01:22:48 [INFO] Test: Mark the new vmap!
+2020-12-17 01:22:50 [INFO] Test: Mark the new vmap successfully!
+2020-12-17 01:22:50 [INFO] Test: Move to [299, 399]!
+2020-12-17 01:22:51 [INFO] Navi: Found the path!
+2020-12-17 01:22:51 [INFO] Navi: Start moving!
+2020-12-17 01:23:40 [INFO] Navi: Arrive at destination!
+2020-12-17 01:23:40 [INFO] Test: Status test pass!
+2020-12-17 01:23:40 [INFO] Test: Arrive at [299, 399] successfully!
+2020-12-17 01:23:40 [INFO] Test: Face to the user!
+2020-12-17 01:23:43 [INFO] Navi: Face to user successfully!
+2020-12-17 01:23:43 [INFO] Test: Face to the user successfully!
+2020-12-17 01:23:43 [INFO] Test: Move along path: [[299, 399], [250, 350], [200, 250], [150, 150], [100, 100], [50, 50], [0, 0]]
+2020-12-17 01:23:43 [WARN] Navi: The destination is illegal!
+Automatically correct it from (250.0, 350.0) to (250.0, 315.0)
+2020-12-17 01:23:43 [WARN] Navi: The destination is illegal!
+Automatically correct it from (150.0, 150.0) to (150.0, 180.0)
+2020-12-17 01:23:44 [WARN] Navi: The destination is illegal!
+Automatically correct it from (100.0, 100.0) to (60.0, 100.0)
+2020-12-17 01:23:44 [INFO] Navi: Finished correcting the path!
+2020-12-17 01:23:44 [INFO] Navi: Start moving!
+2020-12-17 01:24:48 [INFO] Navi: Arrive at destination!
+2020-12-17 01:24:48 [INFO] Test: Status test pass!
+2020-12-17 01:24:48 [INFO] Test: Arrive at [0, 0] successfully!
+2020-12-17 01:24:48 [INFO] Test: Move to [150, 200]!
+2020-12-17 01:24:48 [INFO] Navi: Found the path!
+2020-12-17 01:24:48 [INFO] Navi: Start moving!
+2020-12-17 01:25:24 [INFO] Navi: Arrive at destination!
+2020-12-17 01:25:24 [INFO] Test: Status test pass!
+2020-12-17 01:25:24 [INFO] Test: Arrive at [149.861726567, 198.127788144] successfully!
+2020-12-17 01:25:24 [INFO] Test: Move to the user!
+2020-12-17 01:25:24 [WARN] Navi: The destination is illegal!
+Automatically correct it from (-30, 60) to (0.0, 35.0)
+2020-12-17 01:25:25 [INFO] Navi: Found the path to the user!
+2020-12-17 01:25:25 [INFO] Navi: Move to [56.021193376384105, 163.98064482597363]!
+2020-12-17 01:25:25 [INFO] Navi: Start moving!
+2020-12-17 01:25:34 [INFO] Navi: Move to user successfully!
+2020-12-17 01:25:34 [INFO] Test: Move to the user successfully!
+2020-12-17 01:25:34 [INFO] Test: Stop the Exp!
+2020-12-17 01:25:36 [INFO] Test: Status test pass!
+2020-12-17 01:25:36 [INFO] Test: Stop the Exp successfully!
+2020-12-17 01:25:36 [INFO] Test: Experiment test pass!
+2020-12-17 01:25:36 [INFO] Test: The unit test totally last 187.15 seconds.
+2020-12-17 01:25:36 [INFO] Test: White test starting!
+2020-12-17 01:25:36 [INFO] Test: TF transform test!
+2020-12-17 01:25:36 [INFO] Test: TF transform between vmap and odom test pass!
+2020-12-17 01:25:36 [INFO] Test: TF transform between vmap and base_link test pass!
+2020-12-17 01:25:36 [INFO] Test: TF transform between odom and base_link test pass!
+2020-12-17 01:25:37 [INFO] Test: Load map when sleeping!
+2020-12-17 01:25:37 [INFO] Navi: Loading the map
+2020-12-17 01:25:37 [ERROR] Navi: Cannot init the map! The Exp hasn't been initialized.
+2020-12-17 01:25:37 [INFO] Test: Spin when sleeping!
+2020-12-17 01:25:37 [INFO] Drive: Start spinning!
+2020-12-17 01:25:37 [INFO] Test: Stop spinning when sleeping!
+2020-12-17 01:25:37 [INFO] Drive: Stop spinning!
+2020-12-17 01:25:37 [INFO] Test: Move to dst when sleeping!
+2020-12-17 01:25:37 [INFO] Test: Move along path when sleeping!
+2020-12-17 01:25:38 [INFO] Test: Face to user when sleeping!
+2020-12-17 01:25:38 [ERROR] Navi: Failed to face to user!
+2020-12-17 01:25:38 [INFO] Test: Move to user when sleeping!
+2020-12-17 01:25:38 [ERROR] Navi: Failed to move to user!
+2020-12-17 01:25:38 [INFO] Test: Start the Exp!
+2020-12-17 01:25:38 [INFO] Test: Status test pass!
+2020-12-17 01:25:38 [INFO] Test: Start the Exp successfully!
+2020-12-17 01:25:38 [INFO] Test: Spin when Initializing!
+2020-12-17 01:25:38 [ERROR] Drive: Cannot start spinning now!
+2020-12-17 01:25:38 [INFO] Test: Stop spinning when Initializing!
+2020-12-17 01:25:38 [WARN] Drive: Cannot stop spinning now!
+2020-12-17 01:25:38 [INFO] Test: Move to dst when Initializing!
+2020-12-17 01:25:39 [INFO] Test: Move along path when Initializing!
+2020-12-17 01:25:39 [INFO] Test: Face to user when Initializing!
+2020-12-17 01:25:39 [ERROR] Navi: Failed to face to user!
+2020-12-17 01:25:39 [INFO] Test: Move to user when Initializing!
+2020-12-17 01:25:39 [ERROR] Navi: Failed to move to user!
+2020-12-17 01:25:39 [INFO] Test: Load the map!
+2020-12-17 01:25:39 [INFO] Navi: Loading the map
+2020-12-17 01:25:41 [INFO] Navi: Load the map successfully!
+2020-12-17 01:25:41 [INFO] Test: Status test pass!
+2020-12-17 01:25:41 [INFO] Test: Load the map successfully!
+2020-12-17 01:25:41 [INFO] Test: Spin!
+2020-12-17 01:25:41 [INFO] Drive: Start spinning!
+2020-12-17 01:25:43 [INFO] Test: Spin successfully!
+2020-12-17 01:25:43 [INFO] Test: Stop spinning!
+2020-12-17 01:25:43 [INFO] Drive: Stop spinning!
+2020-12-17 01:25:46 [INFO] Test: Stop spinning successfully!
+2020-12-17 01:25:46 [INFO] Test: Move to [299, 0]!
+2020-12-17 01:25:47 [INFO] Navi: Found the path!
+2020-12-17 01:25:47 [INFO] Navi: Start moving!
+2020-12-17 01:26:24 [INFO] Navi: Arrive at destination!
+2020-12-17 01:26:24 [INFO] Test: Status test pass!
+2020-12-17 01:26:24 [INFO] Test: Arrive at [299, 0] successfully!
+2020-12-17 01:26:24 [INFO] Test: Mark the new vmap!
+2020-12-17 01:26:26 [INFO] Test: Mark the new vmap successfully!
+2020-12-17 01:26:26 [INFO] Test: Stop the exp while moving!
+2020-12-17 01:26:26 [WARN] Navi: The origin is illegal!
+Automatically correct it from (0.316210374765, -1.69517314685e-05) to (0.0, 0.0)
+2020-12-17 01:26:27 [INFO] Navi: Found the path!
+2020-12-17 01:26:27 [INFO] Navi: Start moving!
+2020-12-17 01:26:31 [ERROR] Navi: Failed to achieve destination!
+2020-12-17 01:26:31 [INFO] Test: Status test pass!
+2020-12-17 01:26:34 [INFO] Test: Stop moving successfully
+2020-12-17 01:26:34 [INFO] Test: Start the Exp!
+2020-12-17 01:26:34 [INFO] Test: Status test pass!
+2020-12-17 01:26:34 [INFO] Test: Start the Exp successfully!
+2020-12-17 01:26:34 [INFO] Test: Load the map!
+2020-12-17 01:26:34 [INFO] Navi: Loading the map
+2020-12-17 01:26:35 [INFO] Navi: Load the map successfully!
+2020-12-17 01:26:35 [INFO] Test: Status test pass!
+2020-12-17 01:26:35 [INFO] Test: Load the map successfully!
+2020-12-17 01:26:35 [INFO] Test: Stop the exp while facing to user!
+2020-12-17 01:26:36 [ERROR] Navi: Failed to face to user!
+2020-12-17 01:26:36 [INFO] Test: Status test pass!
+2020-12-17 01:26:38 [INFO] Test: Stop facing to user successfully
+2020-12-17 01:26:38 [INFO] Test: Start the Exp!
+2020-12-17 01:26:38 [INFO] Test: Status test pass!
+2020-12-17 01:26:38 [INFO] Test: Start the Exp successfully!
+2020-12-17 01:26:38 [INFO] Test: Load the map!
+2020-12-17 01:26:38 [INFO] Navi: Loading the map
+2020-12-17 01:26:39 [INFO] Navi: Load the map successfully!
+2020-12-17 01:26:39 [INFO] Test: Status test pass!
+2020-12-17 01:26:39 [INFO] Test: Load the map successfully!
+2020-12-17 01:26:39 [INFO] Test: Stop the exp while moving to user!
+2020-12-17 01:26:41 [ERROR] Navi: Failed to move to user!
+2020-12-17 01:26:42 [INFO] Test: Status test pass!
+2020-12-17 01:26:44 [INFO] Test: Stop moving to user successfully
+2020-12-17 01:26:44 [INFO] Test: Stop the exp while spinning!
+2020-12-17 01:26:44 [INFO] Drive: Start spinning!
+2020-12-17 01:26:46 [INFO] Test: Status test pass!
+2020-12-17 01:26:48 [INFO] Test: Stop spinning successfully
+2020-12-17 01:26:48 [INFO] Test: Start the Exp!
+2020-12-17 01:26:48 [INFO] Test: Status test pass!
+2020-12-17 01:26:48 [INFO] Test: Start the Exp successfully!
+2020-12-17 01:26:48 [INFO] Test: Load the map!
+2020-12-17 01:26:48 [INFO] Navi: Loading the map
+2020-12-17 01:26:49 [INFO] Navi: Load the map successfully!
+2020-12-17 01:26:50 [INFO] Test: Status test pass!
+2020-12-17 01:26:50 [INFO] Test: Load the map successfully!
+2020-12-17 01:26:50 [INFO] Test: Move to [0, 399]!
+2020-12-17 01:26:50 [WARN] Navi: The destination is not accessible!
+Automatically correct it from (0.0, 399.0) to (0.0, 265.0)
+2020-12-17 01:26:50 [INFO] Navi: Found the path!
+2020-12-17 01:26:50 [INFO] Navi: Start moving!
+2020-12-17 01:27:16 [INFO] Navi: Arrive at destination!
+2020-12-17 01:27:16 [INFO] Test: Status test pass!
+2020-12-17 01:27:16 [INFO] Test: Arrive at [-0.438187127389, 263.691164481] successfully!
+2020-12-17 01:27:16 [INFO] Test: Stop the Exp!
+2020-12-17 01:27:18 [INFO] Test: Status test pass!
+2020-12-17 01:27:18 [INFO] Test: Stop the Exp successfully!
+2020-12-17 01:27:18 [INFO] Test: Exp status test pass!
+2020-12-17 01:27:18 [INFO] Test: The white test totally last 98.63 seconds.

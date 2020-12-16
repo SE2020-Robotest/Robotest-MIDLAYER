@@ -5,6 +5,7 @@
     <param name="connected" value="False"/>
     <rosparam param="user_posi" >[-30, 60]</rosparam>
 
+    <node pkg="robot_port" name="total_log" type="total_log.py" output="screen" />
     <node pkg="robot_port" name="communicater" type="communicater.py" output="screen"/>
     <node pkg="robot_port" name="posi_publisher" type="posi_publisher.py" output="screen"/>
     <node pkg="robot_port" name="navi_node" type="navi_node.py" output="screen" required="true"/>

@@ -12,12 +12,13 @@ from robot_port.msg import map_object
 from robot_port.msg import vmap
 from robot_port.msg import response
 from robot_port.msg import stop
-from my_pq import test_my_pq as _test_my_pq
-from status import test_status as _test_status
-from grid_graph import test_grid_graph as _test_grid_graph
-import status
-from trans import trans
-from enum_list import *
+from robot_port.my_pq import test_my_pq as _test_my_pq
+from robot_port.status import test_status as _test_status
+from robot_port.grid_graph import test_grid_graph as _test_grid_graph
+import robot_port.status as status
+from robot_port.trans import trans
+from robot_port.log import log
+from robot_port.enum_list import *
 from Queue import Queue
 
 
@@ -39,6 +40,7 @@ class test:
 		self.rb_s = status.rb()
 		self.exp_s = status.exp()
 		self.tr = trans()
+		self.my_log = log()
 		
 		self.m = vmap()
 		self.m.w = 300
@@ -65,7 +67,7 @@ class test:
 		self.m_cplx.obj.append(map_object(1, 130, 113, 50, 50))
 		self.m_cplx.obj.append(map_object(1, 250, 50, 23, 50))
 		self.m_cplx.obj.append(map_object(1, 150, 390, 20, 50))
-		rospy.loginfo("Test: Test Node Initialized!")
+		self.my_log.loginfo("Test: Test Node Initialized!")
 		return
 
 	def get_response(self, msg):
@@ -127,33 +129,33 @@ class test:
 	def test_my_pq(self):
 		try:
 			_test_my_pq()
-			rospy.loginfo("Test: Priority Queue test pass!")
+			self.my_log.loginfo("Test: Priority Queue test pass!")
 		except AssertionError as e:
-			rospy.logerr("Test: Priority Queue test failed! Details: %s", e)
+			self.my_log.logerr("Test: Priority Queue test failed! Details: %s", e)
 
 	def test_status(self):
 		try:
 			_test_status()
-			rospy.loginfo("Test: Status test pass!")
+			self.my_log.loginfo("Test: Status test pass!")
 		except AssertionError as e:
-			rospy.logerr("Test: Status test failed! Details: %s", e)
+			self.my_log.logerr("Test: Status test failed! Details: %s", e)
 
 	def test_grid_graph(self):
 		try:
 			_test_grid_graph()
-			rospy.loginfo("Test: Grid_graph test pass!")
+			self.my_log.loginfo("Test: Grid_graph test pass!")
 		except AssertionError as e:
-			rospy.logerr("Test: Grid_graph test failed! Details: %s", e)
+			self.my_log.logerr("Test: Grid_graph test failed! Details: %s", e)
 
 	def test_start_exp(self):
-		rospy.loginfo("Test: Start the Exp!")
+		self.my_log.loginfo("Test: Start the Exp!")
 		self.rb_s.Start()
 		assert self.rb_s.get_status() == status.rb.init, "%s is wrong!"%status.rbs
-		rospy.loginfo("Test: Status test pass!")
-		rospy.loginfo("Test: Start the Exp successfully!")
+		self.my_log.loginfo("Test: Status test pass!")
+		self.my_log.loginfo("Test: Start the Exp successfully!")
 
 	def test_stop_exp(self):
-		rospy.loginfo("Test: Stop the Exp!")
+		self.my_log.loginfo("Test: Stop the Exp!")
 		self.exp_s.Wait()
 		self.rb_s.Stop()
 		assert self.rb_s.get_status() == status.rb.sleep, "%s is wrong!"%status.rbs
@@ -163,22 +165,22 @@ class test:
 		v = self.tr.get_velocity(msg)
 		assert abs(msg.twist.twist.angular.z) < 0.1, "Failed to stop moving!"
 		assert abs(v[0]) < 0.1 and abs(v[1]) < 0.1, "Failed to stop moving!"
-		rospy.loginfo("Test: Status test pass!")
-		rospy.loginfo("Test: Stop the Exp successfully!")
+		self.my_log.loginfo("Test: Status test pass!")
+		self.my_log.loginfo("Test: Stop the Exp successfully!")
 
 	def test_load_map(self, m):
-		rospy.loginfo("Test: Load the map!")
+		self.my_log.loginfo("Test: Load the map!")
 		self.load_map(m)
 		res = self.wait_for_res(20.0)
 		assert res.node == "Navi", "Wrong response!"
 		assert res.response, res.discription
 		assert self.rb_s.get_status() == status.rb.run, "%s is wrong!"%status.rbs
 		assert self.exp_s.get_status() == status.exp.wait, "%s is wrong!"%status.exps
-		rospy.loginfo("Test: Status test pass!")
-		rospy.loginfo("Test: Load the map successfully!")
+		self.my_log.loginfo("Test: Status test pass!")
+		self.my_log.loginfo("Test: Load the map successfully!")
 
 	def test_spin(self):
-		rospy.loginfo("Test: Spin!")
+		self.my_log.loginfo("Test: Spin!")
 		self.spin()
 		res = self.wait_for_res(5)
 		assert res.node == "Drive", "Wrong response!"
@@ -186,10 +188,10 @@ class test:
 		rospy.sleep(2)
 		msg = self.tr.get_msg()
 		assert abs(msg.twist.twist.angular.z) > max_a - 0.1, "Failed to spin!"
-		rospy.loginfo("Test: Spin successfully!")
+		self.my_log.loginfo("Test: Spin successfully!")
 
 	def test_stop_spinning(self):
-		rospy.loginfo("Test: Stop spinning!")
+		self.my_log.loginfo("Test: Stop spinning!")
 		self.stop_spinning()
 		res = self.wait_for_res(5)
 		assert res.node == "Drive", "Wrong response!"
@@ -197,58 +199,58 @@ class test:
 		rospy.sleep(2)
 		msg = self.tr.get_msg()
 		assert abs(msg.twist.twist.angular.z) < max_a / 2, "Failed to stop spinning!"
-		rospy.loginfo("Test: Stop spinning successfully!")
+		self.my_log.loginfo("Test: Stop spinning successfully!")
 
 	def test_move_to(self, x, y, accessible = False):
-		rospy.loginfo("Test: Move to [%s, %s]!"%(x, y))
+		self.my_log.loginfo("Test: Move to [%s, %s]!"%(x, y))
 		self.move_to(x, y)
 		res = self.wait_for_res(60.0)
 		assert res.node == "Navi", "Wrong response!"
 		assert res.response, res.discription
 		assert self.rb_s.get_status() == status.rb.run, "%s is wrong!"%status.rbs
 		assert self.exp_s.get_status() == status.exp.wait, "%s is wrong!"%status.exps
-		rospy.loginfo("Test: Status test pass!")
+		self.my_log.loginfo("Test: Status test pass!")
 		p = self.tr.get_posi()
 		if accessible:
 			assert (self.dist(p, [x, y]) < eps_d), "Failed to arrive the destination!"
-			rospy.loginfo("Test: Arrive at [%s, %s] successfully!"%(x, y))
+			self.my_log.loginfo("Test: Arrive at [%s, %s] successfully!"%(x, y))
 		else:
-			rospy.loginfo("Test: Arrive at [%s, %s] successfully!"%(p[0], p[1]))
+			self.my_log.loginfo("Test: Arrive at [%s, %s] successfully!"%(p[0], p[1]))
 
 	def test_move_along_path(self, path, accessible = False):
-		rospy.loginfo("Test: Move along path: %s", path)
+		self.my_log.loginfo("Test: Move along path: %s", path)
 		self.move_along_path(path)
 		res = self.wait_for_res(80.0)
 		assert res.node == "Navi", "Wrong response!"
 		assert res.response, res.discription
 		assert self.rb_s.get_status() == status.rb.run, "%s is wrong!"%status.rbs
 		assert self.exp_s.get_status() == status.exp.wait, "%s is wrong!"%status.exps
-		rospy.loginfo("Test: Status test pass!")
+		self.my_log.loginfo("Test: Status test pass!")
 		p = self.tr.get_posi()
 		if accessible:
 			assert self.dist(p, path[-1]) < eps_d + 0.5, "Failed to arrive the destination!"
-			rospy.loginfo("Test: Arrive at %s successfully!", path[-1])
+			self.my_log.loginfo("Test: Arrive at %s successfully!", path[-1])
 		else:
-			rospy.loginfo("Test: Arrive at %s successfully!", p)
+			self.my_log.loginfo("Test: Arrive at %s successfully!", p)
 
 	def test_face_to_user(self):
-		rospy.loginfo("Test: Face to the user!")
+		self.my_log.loginfo("Test: Face to the user!")
 		self.face_to_user()
 		res = self.wait_for_res(10.0)
 		assert res.node == "Navi", "Wrong response!"
 		assert res.response, res.discription
-		rospy.loginfo("Test: Face to the user successfully!")
+		self.my_log.loginfo("Test: Face to the user successfully!")
 
 	def test_move_to_user(self):
-		rospy.loginfo("Test: Move to the user!")
+		self.my_log.loginfo("Test: Move to the user!")
 		self.move_to_user()
 		res = self.wait_for_res(60.0)
 		assert res.node == "Navi", "Wrong response!"
 		assert res.response, res.discription
-		rospy.loginfo("Test: Move to the user successfully!")
+		self.my_log.loginfo("Test: Move to the user successfully!")
 
 	def test_mark(self):
-		rospy.loginfo("Test: Mark the new vmap!")
+		self.my_log.loginfo("Test: Mark the new vmap!")
 		self.mark()
 		res = self.wait_for_res(5)
 		assert res.node == "vmap_broadcaster", "Wrong response!"
@@ -256,7 +258,7 @@ class test:
 		rospy.sleep(2)
 		p = self.tr.get_posi()
 		assert self.dist(p, [0, 0]) < eps_d / 2, "Failed to mark the vmap!"
-		rospy.loginfo("Test: Mark the new vmap successfully!")
+		self.my_log.loginfo("Test: Mark the new vmap successfully!")
 
 	def test_experiment(self):
 		####################################################################
@@ -268,13 +270,13 @@ class test:
 		####################################################################
 		#   TF Transform Test
 		####################################################################
-		rospy.loginfo("Test: TF transform test!")
+		self.my_log.loginfo("Test: TF transform test!")
 		assert self.tr.listener.canTransform('/vmap', '/odom', rospy.Time()), "/vmap frame and /odom cannot transform!"
-		rospy.loginfo("Test: TF transform between vmap and odom test pass!")
+		self.my_log.loginfo("Test: TF transform between vmap and odom test pass!")
 		assert self.tr.listener.canTransform('/vmap', '/base_link', rospy.Time()), "/vmap frame and /base_link cannot transform!"
-		rospy.loginfo("Test: TF transform between vmap and base_link test pass!")
+		self.my_log.loginfo("Test: TF transform between vmap and base_link test pass!")
 		assert self.tr.listener.canTransform('/odom', '/base_link', rospy.Time()), "/odom frame and /base_link cannot transform!"
-		rospy.loginfo("Test: TF transform between odom and base_link test pass!")
+		self.my_log.loginfo("Test: TF transform between odom and base_link test pass!")
 		
 		####################################################################
 		#   Start Exp Test
@@ -339,57 +341,57 @@ class test:
 		####################################################################
 		#   TF Transform Test
 		####################################################################
-		rospy.loginfo("Test: TF transform test!")
+		self.my_log.loginfo("Test: TF transform test!")
 		assert self.tr.listener.canTransform('/vmap', '/odom', rospy.Time()), "/vmap frame and /odom cannot transform!"
-		rospy.loginfo("Test: TF transform between vmap and odom test pass!")
+		self.my_log.loginfo("Test: TF transform between vmap and odom test pass!")
 		assert self.tr.listener.canTransform('/vmap', '/base_link', rospy.Time()), "/vmap frame and /base_link cannot transform!"
-		rospy.loginfo("Test: TF transform between vmap and base_link test pass!")
+		self.my_log.loginfo("Test: TF transform between vmap and base_link test pass!")
 		assert self.tr.listener.canTransform('/odom', '/base_link', rospy.Time()), "/odom frame and /base_link cannot transform!"
-		rospy.loginfo("Test: TF transform between odom and base_link test pass!")
+		self.my_log.loginfo("Test: TF transform between odom and base_link test pass!")
 		
 		####################################################################
 		#	Before starting Exp:
 		#   Test Load map, Spin and Stop Spinning,
 		#	Navigation, Face to User, Move to User.
 		####################################################################
-		rospy.loginfo("Test: Load map when sleeping!")
+		self.my_log.loginfo("Test: Load map when sleeping!")
 		self.load_map(self.m)
 		res = self.wait_for_res(5)
 		assert res.node == 'Navi', "Wrong response!"
 		assert not res.response, "Failed to detected error that loading map when sleeping."
 		
-		rospy.loginfo("Test: Spin when sleeping!")
+		self.my_log.loginfo("Test: Spin when sleeping!")
 		self.spin()
 		res = self.wait_for_res(5)
 		assert res.node == 'Drive', "Wrong response!"
 		assert res.response, res.discription
 		
-		rospy.loginfo("Test: Stop spinning when sleeping!")
+		self.my_log.loginfo("Test: Stop spinning when sleeping!")
 		self.stop_spinning()
 		res = self.wait_for_res(5)
 		assert res.node == 'Drive', "Wrong response!"
 		assert res.response, res.discription
 		
-		rospy.loginfo("Test: Move to dst when sleeping!")
+		self.my_log.loginfo("Test: Move to dst when sleeping!")
 		self.move_to(150, 200)
 		res = self.wait_for_res(5)
 		assert res.node == 'Navi', "Wrong response!"
 		assert not res.response, "Failed to detected error that moving when sleeping."
 		
-		rospy.loginfo("Test: Move along path when sleeping!")
+		self.my_log.loginfo("Test: Move along path when sleeping!")
 		path = [[299, 399], [250, 350], [200, 250], [150, 150], [100, 100], [50, 50], [0, 0]]
 		self.move_along_path(path)
 		res = self.wait_for_res(5)
 		assert res.node == 'Navi', "Wrong response!"
 		assert not res.response, "Failed to detected error that moving when sleeping."
 		
-		rospy.loginfo("Test: Face to user when sleeping!")
+		self.my_log.loginfo("Test: Face to user when sleeping!")
 		self.face_to_user()
 		res = self.wait_for_res(5)
 		assert res.node == 'Navi', "Wrong response!"
 		assert not res.response, "Failed to detected error that facing to user when sleeping."
 		
-		rospy.loginfo("Test: Move to user when sleeping!")
+		self.my_log.loginfo("Test: Move to user when sleeping!")
 		self.move_to_user()
 		res = self.wait_for_res(5)
 		assert res.node == 'Navi', "Wrong response!"
@@ -402,38 +404,38 @@ class test:
 		####################################################################
 		self.test_start_exp()
 		
-		rospy.loginfo("Test: Spin when Initializing!")
+		self.my_log.loginfo("Test: Spin when Initializing!")
 		self.spin()
 		res = self.wait_for_res(5)
 		assert res.node == 'Drive', "Wrong response!"
 		assert not res.response, "Failed to detected error that spinning when initializing."
 		
-		rospy.loginfo("Test: Stop spinning when Initializing!")
+		self.my_log.loginfo("Test: Stop spinning when Initializing!")
 		self.stop_spinning()
 		res = self.wait_for_res(5)
 		assert res.node == 'Drive', "Wrong response!"
 		assert not res.response, "Failed to detected error that spinning when initializing."
 		
-		rospy.loginfo("Test: Move to dst when Initializing!")
+		self.my_log.loginfo("Test: Move to dst when Initializing!")
 		self.move_to(150, 200)
 		res = self.wait_for_res(5)
 		assert res.node == 'Navi', "Wrong response!"
 		assert not res.response, "Failed to detected error that moving when initializing."
 		
-		rospy.loginfo("Test: Move along path when Initializing!")
+		self.my_log.loginfo("Test: Move along path when Initializing!")
 		path = [[299, 399], [250, 350], [200, 250], [150, 150], [100, 100], [50, 50], [0, 0]]
 		self.move_along_path(path)
 		res = self.wait_for_res(5)
 		assert res.node == 'Navi', "Wrong response!"
 		assert not res.response, "Failed to detected error that moving when initializing."
 		
-		rospy.loginfo("Test: Face to user when Initializing!")
+		self.my_log.loginfo("Test: Face to user when Initializing!")
 		self.face_to_user()
 		res = self.wait_for_res(5)
 		assert res.node == 'Navi', "Wrong response!"
 		assert not res.response, "Failed to detected error that facing to user when initializing."
 		
-		rospy.loginfo("Test: Move to user when Initializing!")
+		self.my_log.loginfo("Test: Move to user when Initializing!")
 		self.move_to_user()
 		res = self.wait_for_res(5)
 		assert res.node == 'Navi', "Wrong response!"
@@ -450,7 +452,7 @@ class test:
 		self.test_move_to(299, 0, True)
 		self.test_mark()
 		
-		rospy.loginfo("Test: Stop the exp while moving!")
+		self.my_log.loginfo("Test: Stop the exp while moving!")
 		self.move_to(299, 399)
 		rospy.sleep(5)
 		self.stop_exp()
@@ -459,17 +461,17 @@ class test:
 		assert not res.response, "Failed to stop navigation!"
 		assert self.rb_s.get_status() == status.rb.sleep, "%s is wrong!"%status.rbs
 		assert self.exp_s.get_status() == status.exp.wait, "%s is wrong!"%status.exps
-		rospy.loginfo("Test: Status test pass!")
+		self.my_log.loginfo("Test: Status test pass!")
 		rospy.sleep(2)
 		msg = self.tr.get_msg()
 		v = self.tr.get_velocity(msg)
 		assert abs(v[0]) < 0.1 and abs(v[1]) < 0.1, "Failed to stop moving!"
 		assert abs(msg.twist.twist.angular.z) < 0.1, "Failed to stop moving!"
-		rospy.loginfo("Test: Stop moving successfully")
+		self.my_log.loginfo("Test: Stop moving successfully")
 		
 		self.test_start_exp()
 		self.test_load_map(self.m)
-		rospy.loginfo("Test: Stop the exp while facing to user!")
+		self.my_log.loginfo("Test: Stop the exp while facing to user!")
 		self.face_to_user()
 		rospy.sleep(0.2)
 		self.stop_exp()
@@ -478,17 +480,17 @@ class test:
 		assert not res.response, "Failed to stop facing to user!"
 		assert self.rb_s.get_status() == status.rb.sleep, "%s is wrong!"%status.rbs
 		assert self.exp_s.get_status() == status.exp.wait, "%s is wrong!"%status.exps
-		rospy.loginfo("Test: Status test pass!")
+		self.my_log.loginfo("Test: Status test pass!")
 		rospy.sleep(2)
 		msg = self.tr.get_msg()
 		v = self.tr.get_velocity(msg)
 		assert abs(v[0]) < 0.1 and abs(v[1]) < 0.1, "Failed to stop moving!"
 		assert abs(msg.twist.twist.angular.z) < 0.1, "Failed to stop moving!"
-		rospy.loginfo("Test: Stop facing to user successfully")
+		self.my_log.loginfo("Test: Stop facing to user successfully")
 		
 		self.test_start_exp()
 		self.test_load_map(self.m)
-		rospy.loginfo("Test: Stop the exp while moving to user!")
+		self.my_log.loginfo("Test: Stop the exp while moving to user!")
 		self.move_to_user()
 		rospy.sleep(2)
 		self.stop_exp()
@@ -497,27 +499,27 @@ class test:
 		assert not res.response, "Failed to stop moving to user!"
 		assert self.rb_s.get_status() == status.rb.sleep, "%s is wrong!"%status.rbs
 		assert self.exp_s.get_status() == status.exp.wait, "%s is wrong!"%status.exps
-		rospy.loginfo("Test: Status test pass!")
+		self.my_log.loginfo("Test: Status test pass!")
 		rospy.sleep(2)
 		msg = self.tr.get_msg()
 		v = self.tr.get_velocity(msg)
 		assert abs(v[0]) < 0.1 and abs(v[1]) < 0.1, "Failed to stop moving!"
 		assert abs(msg.twist.twist.angular.z) < 0.1, "Failed to stop moving!"
-		rospy.loginfo("Test: Stop moving to user successfully")
+		self.my_log.loginfo("Test: Stop moving to user successfully")
 		
-		rospy.loginfo("Test: Stop the exp while spinning!")
+		self.my_log.loginfo("Test: Stop the exp while spinning!")
 		self.spin()
 		rospy.sleep(2)
 		self.stop_exp()
 		assert self.rb_s.get_status() == status.rb.sleep, "%s is wrong!"%status.rbs
 		assert self.exp_s.get_status() == status.exp.wait, "%s is wrong!"%status.exps
-		rospy.loginfo("Test: Status test pass!")
+		self.my_log.loginfo("Test: Status test pass!")
 		rospy.sleep(2)
 		msg = self.tr.get_msg()
 		v = self.tr.get_velocity(msg)
 		assert abs(v[0]) < 0.1 and abs(v[1]) < 0.1, "Failed to stop spinning!"
 		assert abs(msg.twist.twist.angular.z) < 0.1, "Failed to stop spinning!"
-		rospy.loginfo("Test: Stop spinning successfully")
+		self.my_log.loginfo("Test: Stop spinning successfully")
 		
 		####################################################################
 		#	Running Exp:
@@ -529,27 +531,27 @@ class test:
 		self.test_stop_exp()
 
 	def unit_test(self):
-		rospy.loginfo("Test: Unit test starting!")
+		self.my_log.loginfo("Test: Unit test starting!")
 		t = rospy.Time.now().to_sec()
 		self.test_my_pq()
 		self.test_status()
 		self.test_grid_graph()
 		try:
 			self.test_experiment()
-			rospy.loginfo("Test: Experiment test pass!")
+			self.my_log.loginfo("Test: Experiment test pass!")
 		except AssertionError as e:
-			rospy.logerr("Test: Experiment test failed! Details: %s", e)
-		rospy.loginfo("Test: The unit test totally last %s seconds.", rospy.Time.now().to_sec() - t)
+			self.my_log.logerr("Test: Experiment test failed! Details: %s", e)
+		self.my_log.loginfo("Test: The unit test totally last %s seconds.", rospy.Time.now().to_sec() - t)
 		
 	def white_test(self):
-		rospy.loginfo("Test: White test starting!")
+		self.my_log.loginfo("Test: White test starting!")
 		t = rospy.Time.now().to_sec()
 		try:
 			self.exp_status_test()
-			rospy.loginfo("Test: Exp status test pass!")
+			self.my_log.loginfo("Test: Exp status test pass!")
 		except AssertionError as e:
-			rospy.logerr("Test: Exp status test failed! Details: %s", e)
-		rospy.loginfo("Test: The white test totally last %s seconds.", rospy.Time.now().to_sec() - t)
+			self.my_log.logerr("Test: Exp status test failed! Details: %s", e)
+		self.my_log.loginfo("Test: The white test totally last %s seconds.", rospy.Time.now().to_sec() - t)
 
 	def test(self):
 		self.unit_test()

@@ -3,8 +3,9 @@
 
 import rospy
 import tf
-from status import rb
-from trans import trans
+from robot_port.log import log
+from robot_port.status import rb
+from robot_port.trans import trans
 from robot_port.msg import posi
 
 '''
@@ -24,6 +25,7 @@ def pub():
 
 	tr = trans()
 	rb_s = rb()
+	my_log = log()
 	rate = rospy.Rate(10)
 	while not rospy.is_shutdown():
 		connected = bool(rospy.get_param("connected"))
@@ -32,8 +34,8 @@ def pub():
 				msg = tr.get_msg()
 				p = tr.get_pose(msg)
 			except (rospy.exceptions.ROSException, tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
-				rospy.logerr("Posi_publisher: Cannot get the position!\nDetails: %s", e)
-				rospy.loginfo("Posi_publisher: Wait 10 seconds")
+				my_log.logerr("Posi_publisher: Cannot get the position!\nDetails: %s", e)
+				my_log.loginfo("Posi_publisher: Wait 10 seconds")
 				rospy.sleep(10)
 				continue
 			posi_pub.publish(msg.header.stamp.to_sec(), p[0], p[1], p[2], p[3], p[4])

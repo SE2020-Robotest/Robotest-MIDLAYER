@@ -27,7 +27,7 @@ class test:
 		self.res = Queue()
 		rospy.init_node('test', anonymous = False)
 		
-		self.voice_pub = rospy.Publisher('voice_cmd', voice_cmd, queue_size = 10)
+		self.voice_pub = rospy.Publisher('xfspeech', String, queue_size = 10)
 		self.path_pub = rospy.Publisher('path', path, queue_size = 10)
 		self.path_ori_pub = rospy.Publisher('path_ori', path_ori, queue_size = 10)
 		self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
@@ -71,7 +71,10 @@ class test:
 		return
 
 	def get_response(self, msg):
-		self.res.put(msg)
+		try:
+			self.res.put(msg)
+		except AttributeError:
+			pass
 
 	def wait_for_res(self, timeout = 60.0):
 		rate = rospy.Rate(5)
@@ -101,10 +104,10 @@ class test:
 		self.map_pub.publish(m)
 
 	def spin(self):
-		self.voice_pub.publish(rospy.Time.now().secs, "旋转")
+		self.voice_pub.publish("旋转")
 
 	def stop_spinning(self):
-		self.voice_pub.publish(rospy.Time.now().secs, "停止旋转")
+		self.voice_pub.publish("停止旋转。")
 
 	def move_to(self, x, y):
 		self.dst_pub.publish(x, y)
@@ -118,10 +121,13 @@ class test:
 		self.path_ori_pub.publish(path_msg)
 
 	def face_to_user(self):
-		self.voice_pub.publish(rospy.Time.now().to_sec(), "look me")
+		self.voice_pub.publish("看我。")
 
 	def move_to_user(self):
-		self.voice_pub.publish(rospy.Time.now().to_sec(), "come here")
+		self.voice_pub.publish("过来。")
+
+	def move_to_ori(self):
+		self.voice_pub.publish("回原点。")
 
 	def mark(self):
 		self.mark_pub.publish("mark")
@@ -212,7 +218,7 @@ class test:
 		self.my_log.loginfo("Test: Status test pass!")
 		p = self.tr.get_posi()
 		if accessible:
-			assert (self.dist(p, [x, y]) < eps_d), "Failed to arrive the destination!"
+			assert (self.dist(p, [x, y]) < def_eps_d + 0.5), "Failed to arrive the destination!"
 			self.my_log.loginfo("Test: Arrive at [%s, %s] successfully!"%(x, y))
 		else:
 			self.my_log.loginfo("Test: Arrive at [%s, %s] successfully!"%(p[0], p[1]))
@@ -228,7 +234,7 @@ class test:
 		self.my_log.loginfo("Test: Status test pass!")
 		p = self.tr.get_posi()
 		if accessible:
-			assert self.dist(p, path[-1]) < eps_d + 0.5, "Failed to arrive the destination!"
+			assert self.dist(p, path[-1]) < def_eps_d + 0.5, "Failed to arrive the destination!"
 			self.my_log.loginfo("Test: Arrive at %s successfully!", path[-1])
 		else:
 			self.my_log.loginfo("Test: Arrive at %s successfully!", p)
@@ -249,6 +255,21 @@ class test:
 		assert res.response, res.discription
 		self.my_log.loginfo("Test: Move to the user successfully!")
 
+	def test_move_to_ori(self):
+		self.my_log.loginfo("Test: Move to the origin point!")
+		self.move_to_ori()
+		res = self.wait_for_res(60.0)
+		assert res.node == "Navi", "Wrong response!"
+		assert res.response, res.discription
+		assert self.rb_s.get_status() == status.rb.run, "%s is wrong!"%status.rbs
+		assert self.exp_s.get_status() == status.exp.wait, "%s is wrong!"%status.exps
+		msg = self.tr.get_msg()
+		p = self.tr.get_posi(msg)
+		angle = self.tr.get_angle(msg)
+		assert (self.dist(p, [0.0, 0.0]) < def_eps_d + 0.5), "Failed to arrive the origin point!"
+		assert abs(angle) < 0.1, "Failed to face to x-axes! angle = %s"%(abs(angle))
+		self.my_log.loginfo("Test: Move to the origin point successfully!")
+
 	def test_mark(self):
 		self.my_log.loginfo("Test: Mark the new vmap!")
 		self.mark()
@@ -257,7 +278,7 @@ class test:
 		assert res.response, res.discription
 		rospy.sleep(2)
 		p = self.tr.get_posi()
-		assert self.dist(p, [0, 0]) < eps_d / 2, "Failed to mark the vmap!"
+		assert self.dist(p, [0, 0]) < def_eps_d / 2, "Failed to mark the vmap!"
 		self.my_log.loginfo("Test: Mark the new vmap successfully!")
 
 	def test_experiment(self):
@@ -305,12 +326,12 @@ class test:
 		self.test_mark()
 		
 		####################################################################
-		#   Move to Destination Test
+		#   Move To Destination Test
 		####################################################################
 		self.test_move_to(299, 399, True)
 		
 		####################################################################
-		#   Face to User Test
+		#   Face To User Test
 		####################################################################
 		self.test_face_to_user()
 		
@@ -321,7 +342,13 @@ class test:
 		self.test_move_along_path(path, True)
 		
 		####################################################################
-		#   Move to User Test
+		#   Move To the Origin Point Test
+		####################################################################
+		self.test_move_to(200, 150)
+		self.test_move_to_ori()
+		
+		####################################################################
+		#   Move To User Test
 		####################################################################
 		self.test_move_to(150, 200)
 		self.test_move_to_user()
@@ -454,7 +481,7 @@ class test:
 		
 		self.my_log.loginfo("Test: Stop the exp while moving!")
 		self.move_to(299, 399)
-		rospy.sleep(5)
+		rospy.sleep(15)
 		self.stop_exp()
 		res = self.wait_for_res(5)
 		assert res.node == "Navi", "Wrong response!"
@@ -492,7 +519,7 @@ class test:
 		self.test_load_map(self.m)
 		self.my_log.loginfo("Test: Stop the exp while moving to user!")
 		self.move_to_user()
-		rospy.sleep(2)
+		rospy.sleep(1)
 		self.stop_exp()
 		res = self.wait_for_res(5)
 		assert res.node == "Navi", "Wrong response!"

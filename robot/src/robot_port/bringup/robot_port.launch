@@ -1,15 +1,17 @@
 <launch>
+    <param name="base_frame" value="odom"/>
     <param name="robot_status" value="sleeping"/>
     <param name="exp_status" value="waiting"/>
     <param name="TEST_MODE" value="False"/>
     <param name="connected" value="False"/>
     <rosparam param="user_posi" >[-30, 60]</rosparam>
 
-    <node pkg="robot_port" name="total_log" type="total_log.py" output="screen" />
+    <node pkg="robot_port" name="total" type="total_log.py" output="screen" />
     <node pkg="robot_port" name="communicater" type="communicater.py" output="screen" respawn="true" respawn_delay="5.0" launch-prefix="xterm -e"/>
     <node pkg="robot_port" name="posi_publisher" type="posi_publisher.py" output="screen" respawn_delay="5.0" respawn="true"/>
     <node pkg="robot_port" name="navi_node" type="navi_node.py" output="screen" required="true"/>
     <node pkg="robot_port" name="drive" type="drive.py" output="screen" respawn="true"/>
     <node pkg="robot_port" name="vmap_broadcaster" type="vmap_broadcaster.py" output="screen"/>
     <node pkg="robot_port" name="fake_cmd" type="fake_cmd.py" output="screen" launch-prefix="xterm -e"/>
+    <node pkg="robot_port" name="voice_pub" type="voice_pub.py" output="screen"/>
 </launch>

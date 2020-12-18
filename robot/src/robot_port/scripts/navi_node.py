@@ -251,9 +251,9 @@ class navi_nodes:
 		'''
 		rb_status = self.rb_s.get_status()
 		exp_status = self.exp_s.get_status()
-		if rb_status == rb.run and msg.cmd == 'stop': # TODO: Change to Chinese
+		if rb_status == rb.run and msg.cmd in v_cmd["stop"]:
 			self.exp_s.Wait()
-		if msg.cmd == 'come here':
+		if msg.cmd in v_cmd["come here"]:
 			if rb_status != rb.run or exp_status != exp.wait:
 				self.response("Cannot move now!", False)
 			is_finished = self.move_to_user()
@@ -263,7 +263,7 @@ class navi_nodes:
 			else:
 				self.my_log.logerr("Navi: Failed to move to user!")
 				self.response("Failed to move to user!", False)
-		elif msg.cmd == 'look me':
+		elif msg.cmd in v_cmd["look me"]:
 			if rb_status != rb.run or exp_status != exp.wait:
 				self.response("Cannot move now!", False)
 			is_finished = self.face_to_user()
@@ -273,7 +273,7 @@ class navi_nodes:
 			else:
 				self.my_log.logerr("Navi: Failed to face to user!")
 				self.response("Failed to face to user!", False)
-		elif msg.cmd == 'move to origin':
+		elif msg.cmd in v_cmd["move to origin"]:
 			if rb_status != rb.run or exp_status != exp.wait:
 				self.response("Cannot move now!", False)
 			is_finished = self.move_to_origin_point()

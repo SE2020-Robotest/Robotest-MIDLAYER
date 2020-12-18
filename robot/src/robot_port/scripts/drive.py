@@ -50,7 +50,7 @@ class drive:
 	    	string cmd
 		'''
 		cmd = msg.cmd
-		if cmd == "旋转":
+		if cmd in v_cmd["spin"]:
 			if not self.canDrive():
 				self.my_log.logerr("Drive: Cannot start spinning now!")
 				self.response("Cannot start spinning now!", False)
@@ -59,7 +59,7 @@ class drive:
 				self.my_log.loginfo("Drive: Start spinning!")
 				self.response("Start Spinning!", True)
 				self.is_spin = True
-		elif cmd == "停止旋转":
+		elif cmd in v_cmd["stop spinning"]:
 			if not self.canDrive():
 				self.my_log.logwarn("Drive: Cannot stop spinning now!")
 				self.response("It's moving now!", False)

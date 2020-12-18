@@ -42,3 +42,13 @@ graph_mode = SMOOTH
 d_user_min = 100		#the minimal distance to the user while recogniting
 d_user_max = 200	#the maximal distance to the user while recogniting
 
+# Voice_cmd:
+v_cmd = {
+	"stop": ["stop", "停止。", "终止。", "停止实验。", "终止实验。"]
+	"spin": ["spin", "旋转。", "开始旋转。", "原地旋转。"]
+	"stop spinning": ["stop spinning", "停止旋转。", "终止旋转。", "结束旋转。"]
+	"look me": ["look me", "看我。", "转过来。", "看过来。", "嗨。"]
+	"come here": ["come here", "过来。", "走过来。", "快过来。", "来。", "到这来。"]
+	"move to origin": ["move to origin", "回到原点。", "回原点。", "回去。", "回去原点。", "去原点。"]
+	
+}

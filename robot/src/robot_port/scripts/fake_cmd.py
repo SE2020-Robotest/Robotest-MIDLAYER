@@ -81,12 +81,6 @@ class fake_cmd:
 				x = float(input("Input the x coordinate:"))
 				y = float(input("Input the y coordinate:"))
 				self.dst_pub.publish(x, y)
-			elif s == "spin":
-				s = "旋转"
-				self.voice_pub.publish(rospy.Time.now().secs, s)
-		 	elif s == "stop spinning":
-				s = "停止旋转"
-				self.voice_pub.publish(rospy.Time.now().secs, s)
 			elif s == "run exp":
 				rospy.loginfo("Fake_cmd: Run the Exp! Set the %s to be '%s'.", status.rbs, status.rb.run)
 				rospy.set_param(status.rbs, status.rb.run)

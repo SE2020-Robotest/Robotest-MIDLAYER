@@ -23,8 +23,8 @@ class drive:
 		self.response_pub = rospy.Publisher('response', response, queue_size = 10)
 		self.move_cmd = Twist()
 
-		rospy.Subscriber('voice_cmd', voice_cmd, self.recieve_voice)
-		rospy.Subscriber('drive_cmd', enum_type, self.recieve_drive_cmd)
+		rospy.Subscriber('voice_cmd', voice_cmd, self.receive_voice)
+		rospy.Subscriber('drive_cmd', enum_type, self.receive_drive_cmd)
 		rospy.Subscriber('stop_exp', stop, self.stop_exp)
 
 		self.is_spin = False
@@ -43,7 +43,7 @@ class drive:
 		exp_status = self.exp_s.get_status()
 		return rb_status == rb.sleep or (rb_status == rb.run and exp_status == exp.wait)
 
-	def recieve_voice(self, msg):
+	def receive_voice(self, msg):
 		'''
 		voice_cmd:
 	    	int32 stamp
@@ -68,7 +68,7 @@ class drive:
 				self.response("Stop Spinning!", True)
 			self.is_spin = False
 
-	def recieve_drive_cmd(self, msg):
+	def receive_drive_cmd(self, msg):
 		'''
 		FRONT = 0
 		BACK = 1

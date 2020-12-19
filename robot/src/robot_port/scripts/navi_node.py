@@ -273,6 +273,7 @@ class navi_nodes:
 		return is_finished
 
 	def navi_cmd(self, cmd):
+		"Check the command and excute the command."
 		rb_status = self.rb_s.get_status()
 		exp_status = self.exp_s.get_status()
 		if rb_status == rb.run and cmd in v_cmd["stop"]:

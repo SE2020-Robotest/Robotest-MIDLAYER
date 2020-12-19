@@ -358,7 +358,7 @@ class test:
 		####################################################################
 		self.test_stop_exp()
 
-	def exp_status_test(self):
+	def status_transfer_test(self):
 		####################################################################
 		#   Initial Status Test
 		####################################################################
@@ -575,9 +575,9 @@ class test:
 		t = rospy.Time.now().to_sec()
 		try:
 			self.exp_status_test()
-			self.my_log.loginfo("Test: Exp status test pass!")
+			self.my_log.loginfo("Test: Status transfer test pass!")
 		except AssertionError as e:
-			self.my_log.logerr("Test: Exp status test failed! Details: %s", e)
+			self.my_log.logerr("Test: Status transfer test failed! Details: %s", e)
 		self.my_log.loginfo("Test: The white test totally last %s seconds.", rospy.Time.now().to_sec() - t)
 
 	def test(self):

@@ -14,7 +14,7 @@ import robot_port.status as status
 
 class fake_cmd:
 	def __init__(self):
-		self.voice_pub = rospy.Publisher('voice_cmd', voice_cmd, queue_size = 10)
+		self.voice_pub = rospy.Publisher('xfspeech', String, queue_size = 10)
 		self.path_pub = rospy.Publisher('path', path_now, queue_size = 10)
 		self.path_ori_pub = rospy.Publisher('path_ori', path_ori, queue_size = 10)
 		self.map_pub = rospy.Publisher('virtual_map', vmap, queue_size = 5)
@@ -96,7 +96,7 @@ class fake_cmd:
 			elif s == "mark":
 				self.mark_pub.publish("mark")
 			else:
-				self.voice_pub.publish(rospy.Time.now().secs, s)
+				self.voice_pub.publish(s)
 		return
 
 

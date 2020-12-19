@@ -29,12 +29,12 @@ Robotest-MIDLAYER/robot/src/robot_port/msg:
 >    point_2d[] p
 
 >path_ori:  
->    int32 start_time  
->    int32 end_time  
+>    float64 start_time  
+>    float64 end_time  
 >    point_2d[] p
 
 >posi:  
->    int32 stamp  
+>    float64 stamp  
 >    float64 x  
 >    float64 y  
 >    float64 vx  
@@ -42,7 +42,7 @@ Robotest-MIDLAYER/robot/src/robot_port/msg:
 >    float64 angle
 
 >voice_cmd:  
->    int32 stamp  
+>    float64 stamp  
 >    string cmd
 
 >map_object:  
@@ -68,15 +68,18 @@ Robotest-MIDLAYER/robot/src/robot_port/msg:
 
 >stop:  
 >    bool stop
+
 ### 相关topics:
 * virtual_map: (从控制端)收到初始化的地图配置信息后发布到这个topic
 * posi: 要发送位置等信息到控制端和AR端，请发布到这个topic
 * path_ori: 发送识别得到的路径，communicater会将之发送至控制端，同时Navi节点会开始依此执行导航任务
 * path: 发送修正后的实际路径到控制端，请发布到这个topic
 * voice_cmd: 发送语音识别得到的指令，请发布到这个topic
+* xfspeech: 迅飞语音识别，识别结果会发布到这个topic
 * drive_cmd: 接受键盘开车的指令
 * dst: 识别得到的目标点，传给navi节点
-* response_to_ctrl: 往控制端回传基本状态: OK = 0; ERROR = 1; FINISHED = 2;
+* response_to_ctrl: 往控制端回传基本状态: OK = 0; ERROR = 1; FINISHED = 2
+* log_msg: 要记录到日志中的输出发布到该topic，将记录到total_log文件中，并且将发送到控制端
 
 ### 节点:
 Robotest-MIDLAYER/robot/src/robot_port/scripts:
@@ -99,6 +102,15 @@ Robotest-MIDLAYER/robot/src/robot_port/scripts:
 >move to: 回车后会要求输入一个x, y坐标，然后将其作为目的地发送至navi节点  
 >status: 返回当前robot和exp的状态。
 * test: 测试模块。请勿直接运行本节点，需要其他节点运行才能进行测试。测试时请调用test.launch文件。
+* voice_pub: 将xfspeech中的语音结果简单处理，并识别其中的指令，将有效指令发布到voice_cmd话题中。
+
+### 其他相关python文件:
+* enum_list: 统一管理程序中的一些重要参数、常数，包括语音识别的指令。
+* grid_graoh: 柵格图。用于navi节点中的加载地图（柵格化）以及寻路。
+* log: 记录日志。包括将日志打印到屏幕，发布到log_msg话题，以及记录到文件中。
+* my_pq: 优先级队列。在Dijkstra寻路中需要用到。
+* status: 统一管理实验的所有状态，以及相关状态的转移。
+* trans: 获取位姿速度信息；实现坐标、向量等在世界坐标系、机器人中心坐标系、虚拟地图坐标系间的转换。
 
 ### 参数:
 * robot_status: 机器人的状态，有4种: 
@@ -112,8 +124,14 @@ Robotest-MIDLAYER/robot/src/robot_port/scripts:
 >moving: 执行导航等任务，正在移动中。此状态和上一个状态之间不能直接转换，只能先转换到wating状态。
 
 * connected: 指示是否与控制端建立连接
+* TEST_MODE: True代表测试模式，将不会实际想外发送消息。False代表不是测试模式。
+* base_frame: 定位时作为依据的tf帧，备选项为/odom, /map。即依据里程计定位还是gmapping定位。
+* user_posi: 预设的用户位置。由于时间有限，我们预设好用户的坐标。如果有能力，之后可以修改为自动识别，具体接口只需修改navi_node中get_posi方法即可。
 
 ### launch文件:
 * robot_port.launch: 实际运行时请launch本文件
 * test.launch: 测试robot_port包时请launch本文件
 
+### 未来:
+该项目目前可能无法实现手势路径导航，但是导航模块中已经实现相关功能，未来如有实现该功能的计划只需将识别得到的路径发送到path_ori话题即可。  
+注意，坐标必须是相对于虚拟地图坐标系的，如果得到的坐标是相对于机器人的坐标，可以用trans模块中的方法进行坐标转换。

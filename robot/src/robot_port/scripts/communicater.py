@@ -51,12 +51,15 @@ class communicater:
 		rospy.Subscriber('response_to_ctrl', enum_type, self.send_response_to_ctrl)
 		rospy.Subscriber('log_msg', String, self.send_log_msg)
 
+		# TEST_MODE and set the IP and Port of other port
 		self.TEST_MODE = bool(rospy.get_param("TEST_MODE"))
 		if not self.TEST_MODE:
 			try:
 				self.set_IP()
 			except Exception as e:
 				self.my_log.logerr("Cannot set the IP and Port of other ports!\nDetails: %s", e)
+		
+		# Start the msg server
 		receive_srv = msg_server.RobotServicer(self.receive_map, self.receive_command, self.receive_voice, self.receive_drive_command)
 		try:
 			thread.start_new_thread(msg_server.serve, (receive_srv, ))
@@ -66,7 +69,6 @@ class communicater:
 			self.init_ok = False
 			return
 
-		self.TEST_MODE = bool(rospy.get_param("TEST_MODE"))
 		self.my_log.loginfo("Communicater: Communicate Node Initialized!")
 		self.init_ok = True
 		return
@@ -128,7 +130,7 @@ class communicater:
 	def send_rb_posi(self, msg):
 		'''
 		posi:
-			int32 stamp
+			float64 stamp
 			float64 x
 			float64 y
 			float64 vx
@@ -144,19 +146,18 @@ class communicater:
 		except Exception as e:
 			self.my_log.logerr("Communicater: Failed to send the position! Cannot connect to Control port! Details:\n %s", e)
 			rospy.set_param("connected", False)
-		'''
 		try:
 			msg_client.sendRBPosition("AR", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
 		except Exception as e:
 			self.my_log.logerr("Communicater: Failed to send the position! Cannot connect to AR port! Details:\n %s", e)
-		'''
+			rospy.set_param("connected", False)
 		return
 
 	def send_rb_path_ori(self, msg):
 		'''
 		path_ori:
-			int32 start_time
-			int32 end_time
+			float64 start_time
+			float64 end_time
 			point_2d[] p
 		point_2d:
 			float64 x
@@ -201,27 +202,28 @@ class communicater:
 	def send_rb_voice_cmd(self, msg):
 		'''
 		voice_cmd:
-			int32 stamp
+			float64 stamp
 			string cmd
 		'''
 		connected = bool(rospy.get_param("connected"))
 		if self.TEST_MODE or not connected:
 			return
 		try:
-			msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
-		except Exception as e:
-			self.my_log.logerr("Communicater: Failed to send the voice cmd! Cannot connect to AR port!\nDetails: %s", e)
-		try:
 			msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
 		except Exception as e:
 			self.my_log.logerr("Communicater: Failed to send the voice cmd! Cannot connect to Control port!\nDetails: %s", e)
+			rospy.set_param("connected", False)
+		try:
+			msg_client.sendVoiceResult("AR", msg.cmd, msg.stamp)
+		except Exception as e:
+			self.my_log.logerr("Communicater: Failed to send the voice cmd! Cannot connect to AR port!\nDetails: %s", e)
 			rospy.set_param("connected", False)
 		return
 
 	def send_response_to_ctrl(self, msg):
 		'''
 		voice_cmd:
-			int32 stamp
+			float64 stamp
 			string cmd
 		'''
 		connected = bool(rospy.get_param("connected"))
@@ -237,7 +239,7 @@ class communicater:
 	def send_log_msg(self, msg):
 		'''
 		voice_cmd:
-			int32 stamp
+			float64 stamp
 			string cmd
 		'''
 		connected = bool(rospy.get_param("connected"))
@@ -309,7 +311,6 @@ class communicater:
 		return 0
 
 	def receive_voice(self, request_iterator, context):
-	
 		return 0
 
 		

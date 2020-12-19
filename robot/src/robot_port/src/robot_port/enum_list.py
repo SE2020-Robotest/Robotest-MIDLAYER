@@ -41,7 +41,7 @@ graph_mode = SMOOTH
 
 # Navi: move_to_user
 d_user_min = 100		#the minimal distance to the user while recogniting
-d_user_max = 200		#the maximal distance to the user while recogniting
+d_user_max = 150		#the maximal distance to the user while recogniting
 
 # voice_cmd:
 v_cmd = {

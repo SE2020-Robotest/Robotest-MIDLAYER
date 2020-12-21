@@ -129,6 +129,9 @@ class test:
 	def move_to_ori(self):
 		self.voice_pub.publish("回原点。")
 
+	def move_to_the_door(self):
+		self.voice_pub.publish("到门边。")
+
 	def mark(self):
 		self.mark_pub.publish("mark")
 
@@ -218,7 +221,7 @@ class test:
 		self.my_log.loginfo("Test: Status test pass!")
 		p = self.tr.get_posi()
 		if accessible:
-			assert (self.dist(p, [x, y]) < def_eps_d + 0.5), "Failed to arrive the destination!"
+			assert (self.dist(p, [x, y]) < accu_eps_d + 0.5), "Failed to arrive the destination!"
 			self.my_log.loginfo("Test: Arrive at [%s, %s] successfully!"%(x, y))
 		else:
 			self.my_log.loginfo("Test: Arrive at [%s, %s] successfully!"%(p[0], p[1]))
@@ -234,7 +237,7 @@ class test:
 		self.my_log.loginfo("Test: Status test pass!")
 		p = self.tr.get_posi()
 		if accessible:
-			assert self.dist(p, path[-1]) < def_eps_d + 0.5, "Failed to arrive the destination!"
+			assert self.dist(p, path[-1]) < accu_eps_d + 0.5, "Failed to arrive the destination!"
 			self.my_log.loginfo("Test: Arrive at %s successfully!", path[-1])
 		else:
 			self.my_log.loginfo("Test: Arrive at %s successfully!", p)
@@ -266,8 +269,18 @@ class test:
 		msg = self.tr.get_msg()
 		p = self.tr.get_posi(msg)
 		angle = self.tr.get_angle(msg)
-		assert (self.dist(p, [0.0, 0.0]) < def_eps_d + 0.5), "Failed to arrive the origin point!"
+		assert (self.dist(p, [0.0, 0.0]) < accu_eps_d + 0.5), "Failed to arrive the origin point!"
 		assert abs(angle) < 0.1, "Failed to face to x-axes! angle = %s"%(abs(angle))
+		self.my_log.loginfo("Test: Move to the origin point successfully!")
+
+	def test_move_to_the_door(self):
+		self.my_log.loginfo("Test: Move to the door!")
+		self.move_to_the_door()
+		res = self.wait_for_res(60.0)
+		assert res.node == "Navi", "Wrong response!"
+		assert res.response, res.discription
+		assert self.rb_s.get_status() == status.rb.run, "%s is wrong!"%status.rbs
+		assert self.exp_s.get_status() == status.exp.wait, "%s is wrong!"%status.exps
 		self.my_log.loginfo("Test: Move to the origin point successfully!")
 
 	def test_mark(self):
@@ -278,7 +291,7 @@ class test:
 		assert res.response, res.discription
 		rospy.sleep(2)
 		p = self.tr.get_posi()
-		assert self.dist(p, [0, 0]) < def_eps_d / 2, "Failed to mark the vmap!"
+		assert self.dist(p, [0, 0]) < rough_eps_d / 2, "Failed to mark the vmap!"
 		self.my_log.loginfo("Test: Mark the new vmap successfully!")
 
 	def test_experiment(self):
@@ -342,9 +355,13 @@ class test:
 		self.test_move_along_path(path, True)
 		
 		####################################################################
+		#   Move To the Door
+		####################################################################
+		self.test_move_to_the_door()
+		
+		####################################################################
 		#   Move To the Origin Point Test
 		####################################################################
-		self.test_move_to(200, 150)
 		self.test_move_to_ori()
 		
 		####################################################################
@@ -574,7 +591,7 @@ class test:
 		self.my_log.loginfo("Test: White test starting!")
 		t = rospy.Time.now().to_sec()
 		try:
-			self.exp_status_test()
+			self.status_transfer_test()
 			self.my_log.loginfo("Test: Status transfer test pass!")
 		except AssertionError as e:
 			self.my_log.logerr("Test: Status transfer test failed! Details: %s", e)

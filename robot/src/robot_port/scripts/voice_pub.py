@@ -13,8 +13,8 @@ voice_pub = None
 def receive_voice(msg):
 	cmd = msg.data
 	cmd.rstrip()
-	if cmd[-3:] in illegal_suffix:
-		cmd = cmd[:-3]
+	for s in illegal_char:
+		cmd.replace(s, "")
 	if not cmd in cmd_list:
 		return
 	my_log.loginfo(cmd)
@@ -23,7 +23,7 @@ def receive_voice(msg):
 def init():
 	rospy.init_node('voice_pub', anonymous = False)
 	global voice_pub
-	voice_pub = rospy.Publisher('voice_cmd', voice_cmd, queue_size = 10)
+	voice_pub = rospy.Publisher('voice_cmd', voice_cmd, queue_size = 1)
 	global my_log
 	my_log = log(if_pub = False)
 	rospy.Subscriber('xfspeech', String, receive_voice)

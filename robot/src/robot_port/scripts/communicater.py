@@ -52,8 +52,9 @@ class communicater:
 		rospy.Subscriber('log_msg', String, self.send_log_msg)
 
 		# TEST_MODE and set the IP and Port of other port
-		self.TEST_MODE = bool(rospy.get_param("TEST_MODE"))
-		if not self.TEST_MODE:
+		global TEST_MODE
+		TEST_MODE = bool(rospy.get_param("TEST_MODE"))
+		if not TEST_MODE:
 			try:
 				self.set_IP()
 			except Exception as e:
@@ -138,7 +139,7 @@ class communicater:
 			float64 angle
 		'''
 		connected = bool(rospy.get_param("connected"))
-		if self.TEST_MODE or not connected:
+		if TEST_MODE or not connected:
 			return
 		try:
 			msg_client.sendRBPosition("Ctrl", [msg.x, msg.y], msg.angle, [msg.vx, msg.vy], msg.stamp)
@@ -164,7 +165,7 @@ class communicater:
 			float64 y
 		'''
 		connected = bool(rospy.get_param("connected"))
-		if self.TEST_MODE or not connected:
+		if TEST_MODE or not connected:
 			return
 		path = []
 		for p in msg.p:
@@ -185,7 +186,7 @@ class communicater:
 			float64 y
 		'''
 		connected = bool(rospy.get_param("connected"))
-		if self.TEST_MODE or not connected:
+		if TEST_MODE or not connected:
 			return
 		if len(msg.p) == 0:
 			return
@@ -206,7 +207,7 @@ class communicater:
 			string cmd
 		'''
 		connected = bool(rospy.get_param("connected"))
-		if self.TEST_MODE or not connected:
+		if TEST_MODE or not connected:
 			return
 		try:
 			msg_client.sendVoiceResult("Ctrl", msg.cmd, msg.stamp)
@@ -227,7 +228,7 @@ class communicater:
 			string cmd
 		'''
 		connected = bool(rospy.get_param("connected"))
-		if self.TEST_MODE or not connected:
+		if TEST_MODE or not connected:
 			return
 		try:
 			msg_client.sendResponseMsg("Ctrl", msg.type)
@@ -243,7 +244,7 @@ class communicater:
 			string cmd
 		'''
 		connected = bool(rospy.get_param("connected"))
-		if self.TEST_MODE or not connected:
+		if TEST_MODE or not connected:
 			return
 		try:
 			msg_client.sendLogMsg("Ctrl", msg.data)

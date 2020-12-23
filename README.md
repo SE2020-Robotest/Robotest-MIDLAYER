@@ -2,19 +2,24 @@
 ## 机器人端相关代码
 
 ### 运行流程:
+#### 编译:
+下载源文件之后，在Robotest-MIDLAYER/robot目录下用catkin_make编译。  
+在该目录下运行:
+```
+source devel/setup.bash
+```
 #### 测试:
 ```
 roscore  
 roslaunch turtlebot_gazebo turtlebot_world.launch  
-roslaunch robot_port test.launch #测试  
+roslaunch robot_port test.launch #测试
 ```
 #### 运行:
 ```
 roscore  
-rosrun rviz rviz -d `rospack find hls_lfcd_lds_driver`/rviz/hlds_laser.rviz #可有可无  
-sudo chmod a+rw /dev/ttyUSB0  
 roslaunch turtlebot_bringup minimal.launch  
-roslaunch turtlebot_navigation gmapping_demo.launch  
+sudo chmod a+rw /dev/ttyUSB0  
+roslaunch turtlebot_navigation gmapping_demo.launch #和上一条在同一终端中执行。  
 roslaunch robot_port robot_port.launch #正式运行  
 rosrun map_server map_saver -f ~/map #保存地图
 ```

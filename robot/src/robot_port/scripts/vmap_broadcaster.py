@@ -4,6 +4,7 @@
 import rospy
 import tf
 from robot_port.log import log
+from robot_port.enum_list import *
 import geometry_msgs.msg
 from std_msgs.msg import String
 from robot_port.msg import response
@@ -28,10 +29,10 @@ class vmap_coordinate:
 
 	def mark(self):
 		listener = tf.TransformListener()
-		base_frame = rospy.get_param("base_frame")
+		BASE_FRAME = rospy.get_param("base_frame")
 		try:
-			listener.waitForTransform("/base_link", "/" + base_frame, rospy.Time(0),rospy.Duration(4.0))
-			[trans,rot] = listener.lookupTransform("/" + base_frame, "/base_link", rospy.Time(0))
+			listener.waitForTransform("/" + ROBOT_FRAME, "/" + BASE_FRAME, rospy.Time(0),rospy.Duration(4.0))
+			[trans,rot] = listener.lookupTransform("/" + BASE_FRAME, "/" + ROBOT_FRAME, rospy.Time(0))
 		except rospy.ROSInterruptException:
 			return False
 		except Exception as e:
@@ -39,9 +40,9 @@ class vmap_coordinate:
 			self.response('Failed to mark the vmap!', False)
 			return False
 		self.t = geometry_msgs.msg.TransformStamped()
-		self.t.header.frame_id = base_frame
+		self.t.header.frame_id = BASE_FRAME
 		self.t.header.stamp = rospy.Time.now()
-		self.t.child_frame_id = 'vmap'
+		self.t.child_frame_id = VMAP_FRAME
 		self.t.transform.translation.x = trans[0]
 		self.t.transform.translation.y = trans[1]
 		self.t.transform.translation.z = trans[2]

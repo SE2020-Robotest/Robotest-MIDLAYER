@@ -27,8 +27,10 @@ FINISHED = 2
 
 ################################ Moving settings ###################################
 
-def_eps_d = 2.0 	# The tollerance
-def_eps_a = 0.5 	# The tollerance
+rough_eps_d = 2.0 	# The loose tollerance
+rough_eps_a = 0.2 	# The loose tollerance
+accu_eps_d = 0.5 	# The accurate tollerance
+accu_eps_a = 0.02 	# The accurate tollerance
 max_l = 0.3			# The linear velocity is bounded by max_l.
 max_a = 1.0			# The angular velocity is bounded by max_a.
 max_delta_l = 0.04 	# The difference of linear velocity is bounded by max_delta_l.
@@ -61,26 +63,43 @@ d_user_max = 150	# The maximal distance to the user while recogniting
 ####################################################################################
 
 
+############################ TF transform: frame_id ################################
+
+VMAP_FRAME = "vmap"
+ROBOT_FRAME = "base_link"
+
+####################################################################################
+
 ################################################ voice_cmd ####################################################
 
 v_cmd = {
-	"stop": ["stop", "停止", "终止", "停止实验", "终止实验"],
-	"spin": ["spin", "旋转", "开始旋转", "原地旋转"],
-	"stop spinning": ["stop spinning", "停止旋转", "终止旋转", "结束旋转"],
-	"look me": ["look me", "看我", "转过来", "看过来", "嗨"],
-	"come here": ["come here", "过来", "走过来", "快过来", "来", "到这来"],
-	"move to origin": ["move to origin", "回到原点", "回原点", "回去", "回去原点", "去原点"]
+	"stop": {"stop", "停止", "终止", "停止实验", "终止实验"},
+	"spin": {"spin", "旋转", "开始旋转", "原地旋转"},
+	"stop spinning": {"stop spinning", "停止旋转", "终止旋转", "结束旋转"},
+	"look me": {"look me", "看我", "转过来", "看过来", "嗨"},
+	"come here": {"come here", "过来", "走过来", "快过来", "到这来"},
+	"move to origin": {"move to origin", "回到原点", "回原点", "回去", "回去原点", "去原点"},
+	"move to the door": {"move to the door", "到门边", "去门边", "去门那"},
+	"move to there": {"move to there", "去那里", "去哪里", "到那里", "到哪里", "去那", "到那去", "到那里去"}
 }
 
 cmd_list = {"stop", "停止", "终止", "停止实验", "终止实验", "spin", "旋转", "开始旋转", "原地旋转", "stop spinning",\
 			"停止旋转", "终止旋转", "结束旋转", "look me", "看我", "转过来", "看过来", "嗨", "come here", "过来",\
-			"走过来", "快过来", "来", "到这来", "move to origin", "回到原点", "回原点", "回去", "回去原点", "去原点"}
+			"走过来", "快过来", "到这来", "move to origin", "回到原点", "回原点", "回去", "回去原点", "去原点",\
+			"move to the door", "到门边", "去门边", "去门那", "move to there", "去那里", "去哪里", "到那里",\
+			"到哪里", "去那", "到那去", "到那里去"}
 
 ###############################################################################################################
 
 
 ###################### voice_pub ##########################
 
-illegal_suffix = ("。", "！", "？")
+illegal_char = ("。", "！", "？", "儿", "，", "嗯")
+
+###########################################################
+
+####################### convert ###########################
+
+BAD_POINT = -0xffffff
 
 ###########################################################

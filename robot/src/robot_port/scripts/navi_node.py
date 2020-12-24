@@ -43,6 +43,7 @@ class navi_nodes:
 		self.exp_s = exp()
 		self.trans = trans()
 		self.my_log = log()
+		self.p_user = self.get_user_posi()
 
 		self.move_cmd_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
 		self.move_cmd = Twist()
@@ -97,6 +98,7 @@ class navi_nodes:
 			cur_p = self.trans.get_posi()
 		except rospy.exceptions.ROSException as e:
 			self.my_log.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+			self.rb_s.Stop()
 			self.response("Cannot get the position!", False)
 			return
 		if not self.g.is_empt_coordinate(cur_p[0], cur_p[1]):
@@ -116,30 +118,32 @@ class navi_nodes:
 		self.response("Load the map successfully!", True)
 		return
 
+	def receieve_dst(self, msg):
+		"Receive the destination"
+		try:
+			is_finished = self.navi_move_to([msg.x, msg.y])
+			if is_finished:
+				self.my_log.loginfo("Navi: Move to the destination successfully!")
+				self.response("Move along the path successfully!", True)
+			else:
+				self.my_log.logerr("Navi: Failed to move to the destination!")
+				self.response("Failed to move to the destination!", False)
+		except rospy.ROSInterruptException:
+			return
+
 	def receieve_path(self, msg):
 		"receive the origin path"
 		ori_path = []
 		for p in msg.p:
 			ori_path.append([p.x, p.y])
 		try:
-			if self.navi_move_along(ori_path):
-				self.my_log.loginfo("Navi: Arrive at destination!")
-				self.response("Arrive at destination!", True)
+			is_finished = self.navi_move_along(ori_path)
+			if is_finished:
+				self.my_log.loginfo("Navi: Move along the path successfully!")
+				self.response("Move along the path successfully!", True)
 			else:
-				self.my_log.logerr("Navi: Failed to achieve destination!")
-				self.response("Failed to achieve destination!", False)
-		except rospy.ROSInterruptException:
-			return
-
-	def receieve_dst(self, msg):
-		"Receive the destination"
-		try:
-			if self.navi_move_to([msg.x, msg.y]):
-				self.my_log.loginfo("Navi: Arrive at destination!")
-				self.response("Arrive at destination!", True)
-			else:
-				self.my_log.logerr("Navi: Failed to achieve destination!")
-				self.response("Failed to achieve destination!", False)
+				self.my_log.logerr("Navi: Failed to move along the path!")
+				self.response("Failed to move along the path!", False)
 		except rospy.ROSInterruptException:
 			return
 
@@ -153,36 +157,99 @@ class navi_nodes:
 			self.navi_cmd(msg.cmd)
 		except rospy.ROSInterruptException:
 			return
-		
-	def navi_move_along(self, ori_path):
-		"Navi to move along the path: correct them and move along this path. Finally, send the corrected path to Control port"
+
+	def navi_move_to(self, q, eps_d = -1):
+		"Navi to the destination: correct it and find a path to move along. Finally, send the path to Control port"
 		'''
-		path_ori:
-			int32 start_time
-			int32 end_time
-			point_2d[] p
-		point_2d:
-			float64 x
-			float64 y
+		parameters:
+			q: the destination.
+			eps_d: the tollerance of the destination. Default is -1. If eps_d <= 0, then it will be set as accu_eps_d.
+		msgs:
+			path:
+				point_2d[] p
+			point_2d:
+				float64 x
+				float64 y
 		'''
+		if eps_d <= 0:
+			eps_d = accu_eps_d
 
 		# Check the status
 		rb_status = self.rb_s.get_status()
 		exp_status = self.exp_s.get_status()
 		if rb_status != rb.run or exp_status != exp.wait:
 			self.my_log.logerr("Navi: Cannot move now!")
-			self.response("Cannot move now!", False)
-			return
+			return False
+		self.exp_s.Move() 							# (Important!) Change the status
+
+		[qx, qy] = q # destination
+
+		# Get the Robot's position
+		try:
+			[px, py] = self.trans.get_posi() # origin position
+		except rospy.exceptions.ROSException:
+			self.my_log.logerr("Navi: Cannot get the Robot's position!")
+			self.exp_s.Wait() 						# (Important!) Change the status
+			return False
+
+		# Find path
+		path = self.g.find_path(px, py, qx, qy)
+		if len(path) == 0:
+			self.my_log.logerr("Navi: Cannot find the path!")
+			self.exp_s.Wait() 						# (Important!) Change the status
+			return False
+		self.my_log.loginfo("Navi: Found the path!")
+
+		# Send path message
+		path_msg = []
+		path_msg.append(point_2d(px, py)) # origin
+		for p in path:
+			path_msg.append(point_2d(p[0], p[1]))
+		self.path_pub.publish(path_msg)
+
+		# Move to the destination
+		self.my_log.loginfo("Navi: Start moving!")
+		is_finished = self.move(path, eps_d)
+		self.exp_s.Wait() 								# (Important!) Change the status
+		if is_finished:
+			self.my_log.loginfo("Navi: Arrive at destination!")
+		else:
+			self.my_log.logerr("Navi: Failed to achieve destination!")
+		return is_finished
+
+	def navi_move_along(self, ori_path, eps_d = -1):
+		"Navi to move along the path: correct them and move along this path. Finally, send the corrected path to Control port"
+		'''
+		parameters:
+			ori_path: the purposal path.
+			eps_d: the tollerance of the destination. Default is -1. If eps_d <= 0, then it will be set as accu_eps_d.
+		msgs:
+			path:
+				float64 start_time
+				float64 stop_time
+				point_2d[] p
+			point_2d:
+				float64 x
+				float64 y
+		'''
+		if eps_d <= 0:
+			eps_d = accu_eps_d
+
+		# Check the status
+		rb_status = self.rb_s.get_status()
+		exp_status = self.exp_s.get_status()
+		if rb_status != rb.run or exp_status != exp.wait:
+			self.my_log.logerr("Navi: Cannot move now!")
+			return False
 		self.exp_s.Move() 							# (Important!) Change the status
 
 		# Get the Robot's position
 		try:
 			[px, py] = self.trans.get_posi() # origin position
-		except:
+		except rospy.exceptions.ROSException:
 			self.my_log.logerr("Navi: Cannot get the Robot's position!")
 			self.exp_s.Wait() 							# (Important!) Change the status
-			self.response("Cannot get the Robot's position!", False)
-			return
+			return False
 		
 		if not self.g.is_empt_coordinate(px, py):
 			[tx, ty] = self.g.correct_point_coordinate(px, py) # correct the origin
@@ -197,8 +264,7 @@ class navi_nodes:
 			if len(path_tmp) == 0:
 				self.my_log.logerr("Navi: Cannot find the path!")
 				self.exp_s.Wait() 						# (Important!) Change the status
-				self.response("Cannot find the path!", False)
-				return
+				return False
 			path += path_tmp
 		self.my_log.loginfo("Navi: Finished correcting the path!")
 
@@ -210,66 +276,12 @@ class navi_nodes:
 
 		# Move to the destination
 		self.my_log.loginfo("Navi: Start moving!")
-		is_finished = self.move(path)
+		is_finished = self.move(path, eps_d)
 		self.exp_s.Wait() 								# (Important!) Change the status
 		if is_finished:
 			self.my_log.loginfo("Navi: Arrive at destination!")
-			self.response("Arrive at destination!", True)
 		else:
 			self.my_log.logerr("Navi: Failed to achieve destination!")
-			self.response("Failed to achieve destination!", False)
-		return
-
-	def navi_move_to(self, q):
-		"Navi to the destination: correct it and find a path to move along. Finally, send the path to Control port"
-		'''
-		path:
-			point_2d[] p
-		point_2d:
-			float64 x
-			float64 y
-		'''
-	
-		# Check the status
-		rb_status = self.rb_s.get_status()
-		exp_status = self.exp_s.get_status()
-		if rb_status != rb.run or exp_status != exp.wait:
-			self.my_log.logerr("Navi: Cannot move now!")
-			self.response("Cannot move now!", False)
-			return False
-		self.exp_s.Move() 							# (Important!) Change the status
-
-		[qx, qy] = q # destination
-
-		# Get the Robot's position
-		try:
-			[px, py] = self.trans.get_posi() # origin position
-		except:
-			self.my_log.logerr("Navi: Cannot get the Robot's position!")
-			self.exp_s.Wait() 						# (Important!) Change the status
-			self.response("Cannot get the Robot's position!", False)
-			return False
-
-		# Find path
-		path = self.g.find_path(px, py, qx, qy)
-		if len(path) == 0:
-			self.my_log.logerr("Navi: Cannot find the path!")
-			self.exp_s.Wait() 						# (Important!) Change the status
-			self.response("Cannot find the path!", False)
-			return False
-		self.my_log.loginfo("Navi: Found the path!")
-
-		# Send path message
-		path_msg = []
-		path_msg.append(point_2d(px, py)) # origin
-		for p in path:
-			path_msg.append(point_2d(p[0], p[1]))
-		self.path_pub.publish(path_msg)
-
-		# Move to the destination
-		self.my_log.loginfo("Navi: Start moving!")
-		is_finished = self.move(path)
-		self.exp_s.Wait() 								# (Important!) Change the status
 		return is_finished
 
 	def navi_cmd(self, cmd):
@@ -315,7 +327,18 @@ class navi_nodes:
 			else:
 				self.my_log.logerr("Navi: Failed to move to origin point!")
 				self.response("Failed to move to origin point!", False)
-
+		elif cmd in v_cmd["move to the door"]:
+			if rb_status != rb.run or exp_status != exp.wait:
+				self.my_log.logerr("Navi: Cannot move now!")
+				self.response("Cannot move now!", False)
+				return
+			is_finished = self.move_to_the_door()
+			if is_finished:
+				self.my_log.loginfo("Navi: Move to the door successfully!")
+				self.response("", True)
+			else:
+				self.my_log.logerr("Navi: Failed to move to the door!")
+				self.response("Failed to move to the door!", False)
 
 	def pub_move_cmd(self, linear, angular):
 		'''
@@ -339,29 +362,45 @@ class navi_nodes:
 	def dist(self, a, b):
 		return sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
-	def move(self, path):
-		for p in path:
+	def move(self, path, eps_d = -1):
+		'''
+		Move along this path. (No navigation)
+		path: the path that robot will movw along.
+		eps_d: the tollerance at the last point. Default is -1. If eps_d <= 0, then it will be set as accu_eps_d.
+		'''
+		if eps_d <= 0:
+			eps_d = accu_eps_d
+		l = len(path)
+		for i in range(l):
 			if self.exp_s.get_status() != exp.move:
 				return False
-			if not self.move_to(p):
-				return False
+			if i < l - 1:
+				if not self.move_to(path[i]):
+					return False
+			else:
+				if not self.move_to(path[i], eps_d = eps_d):
+					return False
 		return True
 
 	def face_to(self, p, eps_a = -1):
+		'''
+		Face to the point p.
+		eps_s: the tollerance of the angle. Default is -1. If eps_a <= 0, then it will be set as rough_eps_a.
+		'''
 		if eps_a <= 0:
-			eps_a = def_eps_a
+			eps_a = rough_eps_a
 		rate = rospy.Rate(10)
 		print "Navi: Rotate!"
 		while True:
 			if self.exp_s.get_status() != exp.move and self.rb_s.get_status() != rb.init:
 				return False
-			
+
 			try:
 				msg = self.trans.get_msg()
 			except rospy.exceptions.ROSException as e:
 				self.my_log.logerr("Navi: Cannot get the position!\nDetails: %s", e)
 				return False
-			
+
 			cur_p = self.trans.get_posi(msg)
 			angle = self.trans.normalize_angle(self.get_orientation(cur_p, p) - self.trans.get_angle(msg))
 			
@@ -372,11 +411,13 @@ class navi_nodes:
 			rate.sleep()
 		return True
 
-	def move_to(self, p, eps_d = -1, eps_a = -1):
+	def move_to(self, p, eps_d = -1):
+		'''
+		Move to point p. (No navigation)
+		eps_d: the tollerance of the point. Default is -1. If eps_d <= 0, then it will be set as rough_eps_d.
+		'''
 		if eps_d <= 0:
-			eps_d = def_eps_d
-		if eps_a <= 0:
-			eps_a = def_eps_a
+			eps_d = rough_eps_d
 		rate = rospy.Rate(10)
 		linear = 0
 		angular = 0
@@ -436,20 +477,21 @@ class navi_nodes:
 
 		return True
 
-	def move_to_origin_point(self):
-		if self.navi_move_to([0, 0]):
-			self.exp_s.Move() 						# (Important!) Change the status
-			is_finished = self.face_to([100, 0], 0.02)
-			self.exp_s.Wait() 						# (Important!) Change the status
-			return is_finished
-		else:
-			return False
-
 	def get_user_posi(self):
-		p = rospy.get_param("user_posi")
-		p[0] = int(p[0])
-		p[1] = int(p[1])
-		return p
+		p_user = rospy.get_param("user_posi")
+		p_user[0] = int(p_user[0])
+		p_user[1] = int(p_user[1])
+		return p_user
+
+	def is_proper_to_recog(self, x, y):
+		d = self.dist([x, y], self.p_user)
+		return d_user_min <= d and d <= d_user_max
+
+	def get_std_recog_posi(self):
+		[x, y] = self.get_user_posi()
+		x = max(d_user_max, min(self.g.w - d_user_max, x))
+		y = max(d_user_max, min(self.g.h - d_user_max, y))
+		return [x, y]
 
 	def face_to_user(self):
 		# Check the status
@@ -459,8 +501,8 @@ class navi_nodes:
 			return False
 		self.exp_s.Move() 							# (Important!) Change the status
 		
-		p = self.get_user_posi()
-		is_finished = self.face_to(p)
+		p_user = self.get_user_posi()
+		is_finished = self.face_to(p_user, accu_eps_a)
 		self.exp_s.Wait() 							# (Important!) Change the status
 		return is_finished
 
@@ -472,42 +514,47 @@ class navi_nodes:
 			return
 		self.exp_s.Move() 							# (Important!) Change the status
 
-		p = self.get_user_posi()
+		p_user = self.get_user_posi()
 
 		# Get the Robot's position
 		try:
 			[px, py] = self.trans.get_posi() # origin position
-		except:
+		except rospy.exceptions.ROSException:
 			self.my_log.logerr("Navi: Cannot get the Robot's position!")
-			self.exp_s.Wait() 						# (Important!) Change the status
-			return False
+			px = 20
+			py = 20
+			#self.exp_s.Wait() 						# (Important!) Change the status
+			#return False
 
-		if self.dist(p, [px, py]) < d_user_max:
-			is_finished = self.face_to(p)
+		if self.is_proper_to_recog(px, py):
+			is_finished = self.face_to(p_user, accu_eps_a)
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return is_finished
 
+		dst = self.get_std_recog_posi()
+
 		# Find path
-		_path = self.g.find_path(px, py, p[0], p[1])
+		_path = self.g.find_path(px, py, dst[0], dst[1])
 		if len(_path) == 0:
-			is_finished = self.face_to(p)
+			is_finished = self.face_to(p_user, accu_eps_a)
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return is_finished
 		
-		# Modify the path
-		for i in range(len(_path)):
-			if self.dist(_path[i], p) < d_user_max:
-				path = _path[0:i + 1]
-				break
-		if self.dist(path[-1], [px, py]) < d_user_min:
-			p1 = path[-1]
-			if len(path) > 1:
-				p2 = path[-2]
-			else:
-				p2 = [px, py]
-			lam = max(d_user_min / self.dist(p1, p2), 1)
-			path[-1][0] = lam * p1[0] + (1 - lam) * p2[0]
-			path[-1][1] = lam * p1[1] + (1 - lam) * p2[1]
+		# Modify the path while the distance is too large.
+		if self.dist(p_user, [px, py]) > d_user_max:
+			for i in range(len(_path)):
+				if self.is_proper_to_recog(_path[i][0], _path[i][1]):
+					path = _path[0:i + 1]
+					break
+			if  self.dist(path[-1], p_user) < d_user_min:
+				p1 = path[-1]
+				if len(path) > 1:
+					p2 = path[-2]
+				else:
+					p2 = [px, py]
+				lam = max((d_user_max - d_user_min) / self.dist(p1, p2), 1)
+				path[-1][0] = lam * p1[0] + (1 - lam) * p2[0]
+				path[-1][1] = lam * p1[1] + (1 - lam) * p2[1]
 		self.my_log.loginfo("Navi: Found the path to the user!")
 		
 		# Send path message
@@ -523,22 +570,29 @@ class navi_nodes:
 		if not self.move(path):
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return False
-		if not self.face_to(p):
+		if not self.face_to(p_user):
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return False
 		self.exp_s.Wait() 							# (Important!) Change the status
 		return True
 
-	def path_to_pose(self, path):
-		dst_pose = []
-		last_p = None
-		for p in path:
-			if last_p is not None:
-				dst_pose[-1].orientation = quaternion_from_euler(0, 0, self.get_orientation(last_p, p), axes = 'sxyz')
-			dst_pose.append(Pose(Point(p[0], p[1], 0), Quaternion()))
-			last_p = p
-		dst_pose[-1].orientation = dst_pose[-2].orientation
-		return dst_pose
+	def move_to_origin_point(self):
+		if self.navi_move_to([0, 0]):
+			self.exp_s.Move() 						# (Important!) Change the status# Get the Robot's position
+			try:
+				[px, py] = self.trans.get_posi() # origin position
+			except rospy.exceptions.ROSException:
+				self.my_log.logerr("Navi: Cannot get the Robot's position!")
+				self.exp_s.Wait() 						# (Important!) Change the status
+				return False
+			is_finished = self.face_to([100, py], accu_eps_a)
+			self.exp_s.Wait() 						# (Important!) Change the status
+			return is_finished
+		else:
+			return False
+
+	def move_to_the_door(self):
+		return self.navi_move_to([self.g.w, self.g.h])
 
 
 if __name__ == '__main__':

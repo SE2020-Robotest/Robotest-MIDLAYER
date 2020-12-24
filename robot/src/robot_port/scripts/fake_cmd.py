@@ -9,6 +9,7 @@ from robot_port.msg import path as path_now
 from robot_port.msg import point_2d
 from robot_port.msg import map_object
 from robot_port.msg import vmap
+from robot_port.enum_list import *
 import robot_port.status as status
 
 
@@ -26,7 +27,8 @@ class fake_cmd:
 
 	def start(self):
 		while not rospy.is_shutdown():
-			s = raw_input("Input the fake command:")
+			s = str(raw_input("Input the fake command:"))
+			s.strip
 			if s == "comm test":
 				'''
 				path_ori:
@@ -56,21 +58,17 @@ class fake_cmd:
 	    	    	map_object[] obj
 				'''
 				m = vmap()
-				m.w = 300
-				m.h = 400
-				m.obj.append(map_object(0, 13, 114, 30, 110))
-				m.obj.append(map_object(0, 163, 350, 35, 30))
-				m.obj.append(map_object(0, 253, 360, 40, 40))
-				m.obj.append(map_object(0, 273, 190, 15, 120))
-				m.obj.append(map_object(0, 50, 290, 30, 130))
-				m.obj.append(map_object(1, 142, 253, 33, 50))
-				m.obj.append(map_object(1, 130, 113, 50, 50))
-				m.obj.append(map_object(1, 250, 50, 23, 50))
+				m.w = 260
+				m.h = 360
+				m.obj.append(map_object(CUBE, 80, 90, 50, 60))
+				m.obj.append(map_object(CUBE, 190, 180, 60, 80))
+				m.obj.append(map_object(CYLINDER, 150, 260, 40, 50))
+				m.obj.append(map_object(CYLINDER, 210, 50, 30, 50))
 				self.map_pub.publish(m)
 			elif s == "move_dst test":
-				self.dst_pub.publish(300, 400)
+				self.voice_pub.publish("move to the door")
 			elif s == "move_path test":
-				path = [[299, 399], [250, 350], [200, 250], [150, 150], [100, 100], [50, 50], [0, 0]]
+				path = [[260, 360], [250, 350], [200, 250], [150, 150], [100, 100], [50, 50], [0, 0]]
 				path_msg = path_ori()
 				path_msg.start_time = rospy.Time.now().secs
 				path_msg.end_time = rospy.Time.now().secs
@@ -91,6 +89,15 @@ class fake_cmd:
 				rospy.loginfo("Fake_cmd: Stop the Exp! Set the %s to be '%s'.", status.rbs, status.rb.sleep)
 				rospy.set_param(status.exps, status.exp.wait)
 				rospy.set_param(status.rbs, status.rb.sleep)
+			elif s == "wait":
+				rospy.loginfo("Fake_cmd: Waiting for command! Set the %s to be '%s'.", status.exps, status.exp.wait)
+				rospy.set_param(status.exps, status.exp.wait)
+			elif s == "move":
+				rospy.loginfo("Fake_cmd: Moving! Set the %s to be '%s'.", status.exps, status.exp.move)
+				rospy.set_param(status.exps, status.exp.move)
+			elif s == "reconize":
+				rospy.loginfo("Fake_cmd: Gesture recognition! Set the %s to be '%s'.", status.exps, status.exp.recog)
+				rospy.set_param(status.exps, status.exp.recog)
 			elif s == "status":
 				print rospy.get_param(status.rbs), rospy.get_param(status.exps)
 			elif s == "mark":

@@ -7,6 +7,7 @@ from robot_port.log import log
 from robot_port.status import rb
 from robot_port.trans import trans
 from robot_port.msg import posi
+from robot_port.enum_list import *
 
 '''
 posi:
@@ -26,7 +27,8 @@ def pub():
 	tr = trans()
 	rb_s = rb()
 	my_log = log()
-	rate = rospy.Rate(10)
+	my_log.loginfo("Posi_publisher: Posi Publisher Initialized!")
+	rate = rospy.Rate(pub_rate)
 	while not rospy.is_shutdown():
 		connected = bool(rospy.get_param("connected"))
 		if connected:

@@ -27,6 +27,8 @@ class grid_graph:
 
 	def __init__(self, w = 100, h = 100, log = None):
 		self.log = log
+		self.w = w
+		self.h = h
 		self.i_range = int(h / delta)
 		self.j_range = int(w / delta)
 		self.N = self.j_range * self.i_range
@@ -175,7 +177,9 @@ class grid_graph:
 		print "The graph has constructed successfully!"
 		return
 
-	def correct_point_index(self, i, j):
+	def correct_point_index(self, i, j, check_func = None):
+		if check_func is None:
+			check_func = self.is_empt
 		if i < 0:
 			i = 0
 		elif i >= self.i_range:
@@ -184,16 +188,17 @@ class grid_graph:
 			j = 0
 		elif j >= self.j_range:
 			j = self.j_range - 1
-		if self.is_empt(i, j):
+		if check_func(i, j):
 			return [i, j]
 		for [k, l] in self.loop_index_ard(i, j):
-			if self.is_empt(k, l):
+			if check_func(k, l):
 				return [k, l]
+		return []
 
-	def correct_point_coordinate(self, x, y):
+	def correct_point_coordinate(self, x, y, check_func = None):
 		j = int(x // delta)
 		i = int(y // delta)
-		[i, j] = self.correct_point_index(i, j)
+		[i, j] = self.correct_point_index(i, j, check_func)
 		return [j * delta, i * delta]
 
 	def find_path(self, px, py, qx, qy):
@@ -343,6 +348,7 @@ def test_grid_graph():
 	m.add_circle(200, 200, 63)
 	m.finish()
 	m.add_circle(0, 0, 100)
+	m.correct_point_coordinate(20, 50)
 	path = m.find_path(0, 0, 83, 413)
 	assert m.is_empt_coordinate(0, 0), failed_str[0]
 	assert m.is_empt_coordinate(99, 499), failed_str[0]

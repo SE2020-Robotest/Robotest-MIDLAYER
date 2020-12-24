@@ -64,8 +64,8 @@ pub_rate = 5 		# HZ
 
 ############################## Navi: move_to_user ##################################
 
-d_user_min = 100	# The minimal distance to the user while recogniting
-d_user_max = 150	# The maximal distance to the user while recogniting
+d_user_min = 120	# The minimal distance to the user while recogniting
+d_user_max = 170	# The maximal distance to the user while recogniting
 
 ####################################################################################
 

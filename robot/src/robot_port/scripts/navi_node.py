@@ -43,6 +43,7 @@ class navi_nodes:
 		self.exp_s = exp()
 		self.trans = trans()
 		self.my_log = log()
+		self.p_user = self.get_user_posi()
 
 		self.move_cmd_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size = 10)
 		self.move_cmd = Twist()
@@ -480,7 +481,17 @@ class navi_nodes:
 		p_user = rospy.get_param("user_posi")
 		p_user[0] = int(p_user[0])
 		p_user[1] = int(p_user[1])
-		return p
+		return p_user
+
+	def is_proper_to_recog(self, x, y):
+		d = self.dist([x, y], self.p_user)
+		return d_user_min <= d and d <= d_user_max
+
+	def get_std_recog_posi(self):
+		[x, y] = self.get_user_posi()
+		x = max(d_user_max, min(self.g.w - d_user_max, x))
+		y = max(d_user_max, min(self.g.h - d_user_max, y))
+		return [x, y]
 
 	def face_to_user(self):
 		# Check the status
@@ -510,35 +521,40 @@ class navi_nodes:
 			[px, py] = self.trans.get_posi() # origin position
 		except rospy.exceptions.ROSException:
 			self.my_log.logerr("Navi: Cannot get the Robot's position!")
-			self.exp_s.Wait() 						# (Important!) Change the status
-			return False
+			px = 20
+			py = 20
+			#self.exp_s.Wait() 						# (Important!) Change the status
+			#return False
 
-		if self.dist(p_user, [px, py]) < d_user_max:
+		if self.is_proper_to_recog(px, py):
 			is_finished = self.face_to(p_user, accu_eps_a)
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return is_finished
 
+		dst = self.get_std_recog_posi()
+
 		# Find path
-		_path = self.g.find_path(px, py, p_user[0], p_user[1])
+		_path = self.g.find_path(px, py, dst[0], dst[1])
 		if len(_path) == 0:
 			is_finished = self.face_to(p_user, accu_eps_a)
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return is_finished
 		
-		# Modify the path
-		for i in range(len(_path)):
-			if self.dist(_path[i], p_user) < d_user_max:
-				path = _path[0:i + 1]
-				break
-		if self.dist(path[-1], [px, py]) < d_user_min:
-			p1 = path[-1]
-			if len(path) > 1:
-				p2 = path[-2]
-			else:
-				p2 = [px, py]
-			lam = max(d_user_min / self.dist(p1, p2), 1)
-			path[-1][0] = lam * p1[0] + (1 - lam) * p2[0]
-			path[-1][1] = lam * p1[1] + (1 - lam) * p2[1]
+		# Modify the path while the distance is too large.
+		if self.dist(p_user, [px, py]) > d_user_max:
+			for i in range(len(_path)):
+				if self.is_proper_to_recog(_path[i][0], _path[i][1]):
+					path = _path[0:i + 1]
+					break
+			if  self.dist(path[-1], p_user) < d_user_min:
+				p1 = path[-1]
+				if len(path) > 1:
+					p2 = path[-2]
+				else:
+					p2 = [px, py]
+				lam = max((d_user_max - d_user_min) / self.dist(p1, p2), 1)
+				path[-1][0] = lam * p1[0] + (1 - lam) * p2[0]
+				path[-1][1] = lam * p1[1] + (1 - lam) * p2[1]
 		self.my_log.loginfo("Navi: Found the path to the user!")
 		
 		# Send path message
@@ -576,7 +592,7 @@ class navi_nodes:
 			return False
 
 	def move_to_the_door(self):
-		return self.navi_move_to([self.g.j_range * delta, self.g.i_range * delta])
+		return self.navi_move_to([self.g.w, self.g.h])
 
 
 if __name__ == '__main__':

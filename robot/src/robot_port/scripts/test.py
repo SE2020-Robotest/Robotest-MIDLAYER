@@ -26,7 +26,12 @@ class test:
 	def __init__(self):
 		self.res = Queue()
 		rospy.init_node('test', anonymous = False)
-		
+
+		self.rb_s = status.rb()
+		self.exp_s = status.exp()
+		self.tr = trans()
+		self.my_log = log()
+
 		self.voice_pub = rospy.Publisher('xfspeech', String, queue_size = 10)
 		self.path_pub = rospy.Publisher('path', path, queue_size = 10)
 		self.path_ori_pub = rospy.Publisher('path_ori', path_ori, queue_size = 10)
@@ -37,10 +42,6 @@ class test:
 		
 		rospy.Subscriber('response', response, self.get_response)
 		
-		self.rb_s = status.rb()
-		self.exp_s = status.exp()
-		self.tr = trans()
-		self.my_log = log()
 		
 		self.m = vmap()
 		self.m.w = 300

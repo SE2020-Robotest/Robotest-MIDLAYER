@@ -4,6 +4,7 @@
 import rospy
 import pickle
 import robot_port.convert as convert
+from math import cos, sin, pi
 from robot_port.log import log
 from robot_port.enum_list import *
 from robot_port.trans import trans
@@ -16,6 +17,7 @@ from robot_port.msg import Frame
 from robot_port.msg import point_2d
 from robot_port.msg import response
 from roslib import message
+import os
 
 '''
 Frame:
@@ -34,11 +36,24 @@ Pixel:
 	float32 y
 '''
 
+
+def get_camera_transformation(theta):
+	"The transformation from camera to robot. The unit of theta is rad."
+	trans = [CAMERA_X, CAMERA_Y, CAMERA_Z]
+	rot = [[0.0, sin(theta), cos(theta)], [-1.0, 0.0, 0.0], [0.0, -cos(theta), sin(theta)]]
+	return (trans, rot)
+
+def trans_from_camera_to_robot(x, y, z, transformation):
+	(trans, rot) = transformation
+	px = rot[0][0] * x + rot[0][1] * y + rot[0][2] * z
+	py = rot[1][0] * x + rot[1][1] * y + rot[1][2] * z
+	pz = rot[2][0] * x + rot[2][1] * y + rot[2][2] * z
+	return [px + trans[0], py + trans[1], pz + trans[2]]
+
 class recognition_data:
 	def __init__(self, path = None):
 		self.num = 0
 		if path is None:
-			import os
 			self.path = os.path.dirname(os.path.realpath(__file__))
 		else:
 			self.path = path
@@ -46,7 +61,7 @@ class recognition_data:
 	def save(self, data, name):
 		raw_data = pickle.dumps(data)
 		with open(self.path + name + ".data", "wb") as f:
-			f.write(cl_img)
+			f.write(raw_data)
 
 	def read(self, name):
 		with open(self.path + name + ".data", "wb") as f:
@@ -59,6 +74,7 @@ class recognition_data:
 
 	def save_recognition_data(self, depth_image, color_image, frame):
 		self.num += 1
+		os.makedirs(self.path + "/%s"%self.num)
 		self.save(depth_image, "/%s/depth_image"%self.num)
 		self.save(color_image, "/%s/color_image"%self.num)
 		self.save(frame, "/%s/frame"%self.num)
@@ -79,28 +95,27 @@ class recognition_data:
 		return (depth_image, color_image, frame)
 
 class gesture_recognize:
-	def __init__(self, my_log = None):
+	def __init__(self, my_log):
 		self.convert = convert.convert()
+		self.tr = trans()
 		self.radio_x = 0
 		self.radio_y = 0
-		self.tr = trans()
-		self.camera_frame_id = ""
-		self.transformation = None
+		self.transformation = get_camera_transformation(CAMERA_THETA * pi / 180)
 		self.recognizing = False
 		self.my_log = my_log
 
 	def start_recognizing(self, depth_image):
-		if self.is_set() and depth_image is not None and (not self.recognizing):
+		if self.is_set() and depth_image != None and (not self.recognizing):
 			self.convert.set_depth_image(depth_image)
-			self.transformation = self.tr.get_transformation(self.camera_frame_id, VMAP_FRAME, depth_image.header.stamp)
 			self.recognizing = True
 			return True
 		else:
+			self.recognizing = False
+			self.my_log.logerr("Gesture: Failed to start recognizing!\nCamera Info: %s, Depth Image: %s"%(self.is_set(), depth_image != None))
 			return False
 
 	def set_camera_info(self, camera_info):
 		self.convert.set_camera_info(camera_info)
-		self.camera_frame_id = camera_info.header.frame_id
 
 	def set_radio(self, radio_x, radio_y):
 		self.radio_x = radio_x
@@ -118,10 +133,7 @@ class gesture_recognize:
 		py = body_part.pixel.y
 		p = self.get_3d_of_body_part(body_part)
 		s = name + ": 2D pixel coordinates is %s, score is %s, 3D point coordinates is %s."%([px, py], body_part.score, p)
-		if self.my_log is None:
-			print s
-		else:
-			self.my_log.loginfo(s)
+		self.my_log.loginfo(s)
 		return
 
 	def log_key_point(self, person):
@@ -132,14 +144,16 @@ class gesture_recognize:
 		return
 
 	def point_camera_to_vmap(self, p_camera):
-		return self.tr.point_a_to_b(p_camera[0], p_camera[1], p_camera[2], self.transformation)
+		return trans_from_camera_to_robot(p_camera[0], p_camera[1], p_camera[2], self.transformation)
 
 	def compute_dst(self, p, q):
-		assert abs(p[2] - q[2]) > 0.0001, "Cannot compute the intersection properly!"
+		assert abs(p[2] - q[2]) > 0.0001, "The two key point has almost the same height. Cannot compute the intersection properly!"
 		t = p[2] / (p[2] - q[2])
-		dst[0] = (1 - t) * p[0] + t * q[0]
-		dst[1] = (1 - t) * p[1] + t * q[1]
-		return dst
+		r = [0, 0, 0]
+		r[0] = ((1 - t) * p[0] + t * q[0])
+		r[1] = ((1 - t) * p[1] + t * q[1])
+		r = self.tr.point_a_to_b(r[0], r[1], r[2], ROBOT_FRAME, VMAP_FRAME)
+		return [r[0] * 100, r[1] * 100]
 
 	def recognize(self, person):
 		if not self.recognizing:
@@ -148,23 +162,28 @@ class gesture_recognize:
 		right_hand = person.bodyParts[4]
 		p_right_shoulder_camera = self.get_3d_of_body_part(right_shoulder)
 		p_right_hand_camera = self.get_3d_of_body_part(right_hand)
-		try:
-			p_right_shoulder = self.point_camera_to_vmap(p_right_shoulder_camera)
-			p_right_hand = self.point_camera_to_vmap(p_right_hand_camera)
-		except Exception as e:
-			if self.my_log is None:
-				print "Gesture: Cannot transform the key point to vmap!\nDetails: %s"%e
-			else:
-				self.my_log.logerr("Gesture: Cannot transform the key point to vmap!\nDetails: %s", e)
+		if len(p_right_shoulder_camera) == 0:
+			self.my_log.logerr("Gesture: Error occured! Cannot get the 3D coordinates of right shoulder!")
 			self.recognizing = False
 			return []
+		elif p_right_shoulder_camera[0] < BAD_POINT + 0.1:
+			self.my_log.logerr("Gesture: The depth data around the right shoulder is invalid!")
+			self.recognizing = False
+			return []
+		if len(p_right_hand_camera) == 0:
+			self.my_log.logerr("Gesture: Error occured! Cannot get the 3D coordinates of right hand!")
+			self.recognizing = False
+			return []
+		elif p_right_hand_camera[0] < BAD_POINT + 0.1:
+			self.my_log.logerr("Gesture: The depth data around the right hand is invalid!")
+			self.recognizing = False
+			return []
+		p_right_shoulder = self.point_camera_to_vmap(p_right_shoulder_camera)
+		p_right_hand = self.point_camera_to_vmap(p_right_hand_camera)
 		try:
 			dst = self.compute_dst(p_right_shoulder, p_right_hand)
-		except AssertionError as e:
-			if self.my_log is None:
-				print "Gesture: Error: %s"%e
-			else:
-				self.my_log.logerr("Gesture: %s", e)
+		except Exception as e:
+			self.my_log.logerr("Gesture: Computing the destination failed:\n%s", e)
 			self.recognizing = False
 			return []
 		self.recognizing = False
@@ -175,7 +194,14 @@ class Gesture:
 		rospy.init_node('gesture', anonymous = False)
 
 		self.my_log = log()
+		self.exp = exp()
 
+		self.is_color_cemera_set = False
+		self.is_depth_cemera_set = False
+		self.color_image = None
+		self.depth_image = None
+		self.depth_point_cloud = None
+		
 		rospy.Subscriber('voice_cmd', voice_cmd, self.receive_voice)
 		self.dst_pub = rospy.Publisher('dst', point_2d, queue_size = 1)
 		self.response_pub = rospy.Publisher('response', response, queue_size = 10)
@@ -193,7 +219,6 @@ class Gesture:
 			self.receive_color_image(color_image)
 			self.test_frame = frame
 		else:
-			import os
 			if rospy.has_param("pkg_path"):
 				path = rospy.get_param("pkg_path")
 			else:
@@ -204,7 +229,8 @@ class Gesture:
 			path += "/" + rospy.get_param("start_time")
 			if not os.path.exists(path):
 				os.makedirs(path)
-			self.gesture_recognizer = gesture_recognize()
+			self.save_data = recognition_data(path)
+			self.gesture_recognizer = gesture_recognize(self.my_log)
 			self.color_image_pub = rospy.Publisher('/camera/color/image_raw/my_pub', Image, queue_size = 1)
 			self.depth_image_pub = rospy.Publisher('/camera/depth/image_raw/my_pub', Image, queue_size = 1)
 			rospy.Subscriber('/camera/color/image_raw', Image, self.receive_color_image)
@@ -213,15 +239,6 @@ class Gesture:
 			self.cl_info_sub = rospy.Subscriber('/camera/color/camera_info', CameraInfo, self.receive_color_camera_info)
 			rospy.Subscriber('/frame', Frame, self.receive_frame)
 
-		self.exp = exp()
-
-		self.is_color_cemera_set = False
-		self.is_depth_cemera_set = False
-		self.recognizing = False
-		self.color_image = None
-		self.depth_image = None
-		self.depth_point_cloud = None
-		
 		self.my_log.loginfo("Gesture: Gesture Node Initialized!")
 
 	def start(self):
@@ -238,8 +255,8 @@ class Gesture:
 		radio_y = float(self.depth_camera_info.height) / float(self.color_camera_info.height)
 		self.gesture_recognizer.set_radio(radio_x, radio_y)
 		self.save_data.save_camera_info(self.depth_camera_info, self.color_camera_info)
-		self.dp_info_sub.unregister(CameraInfo)
-		self.cl_info_sub.unregister(CameraInfo)
+		self.dp_info_sub.unregister()
+		self.cl_info_sub.unregister()
 		del self.depth_camera_info
 		del self.color_camera_info
 		del self.dp_info_sub
@@ -251,7 +268,7 @@ class Gesture:
 			if not self.exp.Recog():
 				self.my_log.logerr("Gesture: Cannot recognize now!")
 				return
-			if self.image_pub() and self.gesture_recognizer.start_recognizing(self.depth_image):
+			if self.gesture_recognizer.start_recognizing(self.depth_image) and self.image_pub():
 				self.my_log.loginfo("Gesture: Published the image")
 			else:
 				self.exp.Wait()
@@ -275,11 +292,11 @@ class Gesture:
 			if self.is_set(): self.finish_set()
 
 	def receive_color_image(self, data):
-		if not self.recognizing:
+		if self.exp.is_running() and self.exp.get_status() == exp.wait:
 			self.color_image = data
 
 	def receive_depth_image(self, data):
-		if not self.recognizing:
+		if self.exp.is_running() and self.exp.get_status() == exp.wait:
 			self.depth_image = data
 
 	def receive_frame(self, data):
@@ -288,6 +305,7 @@ class Gesture:
 		persons = data.persons
 		if len(persons) == 0:
 			self.my_log.logerr("Gesture: No person detected!")
+			self.exp.Wait()
 			self.response("No person detected!", False)
 			return
 		elif len(persons) > 1:
@@ -307,6 +325,10 @@ class Gesture:
 			self.my_log.logerr("Gesture: The number of feedback is wrong!")
 			self.exp.Wait()
 			self.response("The number of feedback is wrong!", False)
+		else:
+			self.my_log.logerr("Gesture: Gesture recognition failed!")
+			self.response("Gesture recognition failed!", False)
+			self.exp.Wait()
 		return
 
 	def image_pub(self):

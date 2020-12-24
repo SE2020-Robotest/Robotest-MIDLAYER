@@ -97,6 +97,7 @@ class navi_nodes:
 			cur_p = self.trans.get_posi()
 		except rospy.exceptions.ROSException as e:
 			self.my_log.logerr("Navi: Cannot get the position!\nDetails: %s", e)
+			self.rb_s.Stop()
 			self.response("Cannot get the position!", False)
 			return
 		if not self.g.is_empt_coordinate(cur_p[0], cur_p[1]):
@@ -476,9 +477,9 @@ class navi_nodes:
 		return True
 
 	def get_user_posi(self):
-		p = rospy.get_param("user_posi")
-		p[0] = int(p[0])
-		p[1] = int(p[1])
+		p_user = rospy.get_param("user_posi")
+		p_user[0] = int(p_user[0])
+		p_user[1] = int(p_user[1])
 		return p
 
 	def face_to_user(self):
@@ -489,8 +490,8 @@ class navi_nodes:
 			return False
 		self.exp_s.Move() 							# (Important!) Change the status
 		
-		p = self.get_user_posi()
-		is_finished = self.face_to(p, accu_eps_a)
+		p_user = self.get_user_posi()
+		is_finished = self.face_to(p_user, accu_eps_a)
 		self.exp_s.Wait() 							# (Important!) Change the status
 		return is_finished
 
@@ -502,7 +503,7 @@ class navi_nodes:
 			return
 		self.exp_s.Move() 							# (Important!) Change the status
 
-		p = self.get_user_posi()
+		p_user = self.get_user_posi()
 
 		# Get the Robot's position
 		try:
@@ -512,21 +513,21 @@ class navi_nodes:
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return False
 
-		if self.dist(p, [px, py]) < d_user_max:
-			is_finished = self.face_to(p, accu_eps_a)
+		if self.dist(p_user, [px, py]) < d_user_max:
+			is_finished = self.face_to(p_user, accu_eps_a)
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return is_finished
 
 		# Find path
-		_path = self.g.find_path(px, py, p[0], p[1])
+		_path = self.g.find_path(px, py, p_user[0], p_user[1])
 		if len(_path) == 0:
-			is_finished = self.face_to(p, accu_eps_a)
+			is_finished = self.face_to(p_user, accu_eps_a)
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return is_finished
 		
 		# Modify the path
 		for i in range(len(_path)):
-			if self.dist(_path[i], p) < d_user_max:
+			if self.dist(_path[i], p_user) < d_user_max:
 				path = _path[0:i + 1]
 				break
 		if self.dist(path[-1], [px, py]) < d_user_min:
@@ -553,7 +554,7 @@ class navi_nodes:
 		if not self.move(path):
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return False
-		if not self.face_to(p):
+		if not self.face_to(p_user):
 			self.exp_s.Wait() 						# (Important!) Change the status
 			return False
 		self.exp_s.Wait() 							# (Important!) Change the status

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-##### Message #####
+######## Message ########
 
 CUBE = 0
 CYLINDER = 1
@@ -22,15 +22,15 @@ OK = 0
 ERROR = 1
 FINISHED = 2
 
-###################
+#########################
 
 
 ################################ Moving settings ###################################
 
 rough_eps_d = 2.0 	# The loose tollerance
 rough_eps_a = 0.2 	# The loose tollerance
-accu_eps_d = 0.5 	# The accurate tollerance
-accu_eps_a = 0.02 	# The accurate tollerance
+accu_eps_d = 2.0 	# The accurate tollerance
+accu_eps_a = 0.03 	# The accurate tollerance
 max_l = 0.3			# The linear velocity is bounded by max_l.
 max_a = 1.0			# The angular velocity is bounded by max_a.
 max_delta_l = 0.04 	# The difference of linear velocity is bounded by max_delta_l.
@@ -51,6 +51,13 @@ r_robot = 18.0 		# Radius of robot
 r_nbr = 50.0
 delta = 5.0 		# Grid size
 graph_mode = SMOOTH
+
+####################################################################################
+
+
+############################## Posi_Publisher: rate ##################################
+
+pub_rate = 5 		# HZ
 
 ####################################################################################
 
@@ -98,8 +105,12 @@ illegal_char = ("。", "！", "？", "儿", "，", "嗯")
 
 ###########################################################
 
-####################### convert ###########################
+################# Gesture and convert #####################
 
-BAD_POINT = -0xffffff
+CAMERA_THETA = 35 	# degree
+CAMERA_X = 0.1		# meter
+CAMERA_Y = -0.01	# meter
+CAMERA_Z = 0.23		# meter
+BAD_POINT = -0xffff
 
 ###########################################################

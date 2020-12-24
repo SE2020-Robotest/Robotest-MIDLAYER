@@ -44,13 +44,6 @@ class communicater:
 		self.drive_pub = rospy.Publisher('drive_cmd', enum_type, queue_size = 10)
 		self.stop_pub = rospy.Publisher('stop_exp', stop, queue_size = 2)
 
-		rospy.Subscriber('posi_pub', posi, self.send_rb_posi)
-		rospy.Subscriber('path_ori', path_ori, self.send_rb_path_ori)
-		rospy.Subscriber('path', path, self.send_rb_path)
-		rospy.Subscriber('voice_cmd', voice_cmd, self.send_rb_voice_cmd)
-		rospy.Subscriber('response_to_ctrl', enum_type, self.send_response_to_ctrl)
-		rospy.Subscriber('log_msg', String, self.send_log_msg)
-
 		# TEST_MODE and set the IP and Port of other port
 		global TEST_MODE
 		TEST_MODE = bool(rospy.get_param("TEST_MODE"))
@@ -60,6 +53,13 @@ class communicater:
 			except Exception as e:
 				self.my_log.logerr("Cannot set the IP and Port of other ports!\nDetails: %s", e)
 		
+		rospy.Subscriber('posi_pub', posi, self.send_rb_posi)
+		rospy.Subscriber('path_ori', path_ori, self.send_rb_path_ori)
+		rospy.Subscriber('path', path, self.send_rb_path)
+		rospy.Subscriber('voice_cmd', voice_cmd, self.send_rb_voice_cmd)
+		rospy.Subscriber('response_to_ctrl', enum_type, self.send_response_to_ctrl)
+		rospy.Subscriber('log_msg', String, self.send_log_msg)
+
 		# Start the msg server
 		receive_srv = msg_server.RobotServicer(self.receive_map, self.receive_command, self.receive_voice, self.receive_drive_command)
 		try:

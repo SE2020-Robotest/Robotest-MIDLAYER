@@ -46,7 +46,7 @@ try:
 	import cv2 as cv
 	from cv_bridge import CvBridge, CvBridgeError
 	bridge = CvBridge()
-except Exception as e:
+except ImportError as e:
 	print e
 
 def _to_meter_(x):
@@ -88,7 +88,6 @@ def read_depth(depth_image, px, py):
 		depth = 0
 	else:
 		depth = depth_valid_total / cnt
-	print "Depth of %s is %s"%([px, py], depth)
 	return depth
 	
 

@@ -16,4 +16,5 @@
     <node pkg="robot_port" name="fake_cmd" type="fake_cmd.py" output="screen" launch-prefix="xterm -e"/>
     <node pkg="robot_port" name="voice_pub" type="voice_pub.py" output="screen"/>
     <node pkg="robot_port" name="gesture" type="gesture.py" output="screen"/>
+    <node pkg="xfei_asr" name="iat_publish_speak" type="iat_publish_speak" output="screen" launch-prefix="xterm -e"/>
 </launch>

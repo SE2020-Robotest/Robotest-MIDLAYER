@@ -3,6 +3,7 @@
 
 import rospy
 import tf
+from enum_list import *
 from math import cos, sin, pi
 from std_msgs.msg import Header
 from nav_msgs.msg import Odometry
@@ -14,6 +15,8 @@ class trans:
 	def __init__(self):
 		self.listener = tf.TransformListener()
 		rospy.sleep(1)
+		global WORLD_FRAME
+		WORLD_FRAME = "odom"
 		return
 
 	def frame_exists(self, frame_id):
@@ -93,7 +96,7 @@ class trans:
 		py = msg.pose.pose.position.y
 		pz = msg.pose.pose.position.z
 		WORLD_FRAME = msg.header.frame_id
-		[px, py, pz] = self.point_a_to_b(px, py, pz, WORLD_FRAME, VMAP_FRAME, msg.header.stamp)
+		[px, py, pz] = self.point_a_to_b(px, py, pz, WORLD_FRAME, VMAP_FRAME)
 		return [100 * px, 100 * py]
 
 	def get_velocity(self, msg = None):
@@ -103,7 +106,7 @@ class trans:
 		vy = msg.twist.twist.linear.y
 		vz = msg.twist.twist.linear.z
 		WORLD_FRAME = msg.header.frame_id
-		[vx, vy, vz] = self.vector_a_to_b(vx, vy, vz, WORLD_FRAME, VMAP_FRAME, msg.header.stamp)
+		[vx, vy, vz] = self.vector_a_to_b(vx, vy, vz, WORLD_FRAME, VMAP_FRAME)
 		return [100 * vx, 100 * vy]
 
 	def get_angle(self, msg = None):
@@ -111,7 +114,7 @@ class trans:
 			msg = self.get_msg()
 		theta = self.quat_to_angle([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, \
 								msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
-		return self.angle_a_to_b(theta, WORLD_FRAME, VMAP_FRAME, msg.header.stamp)
+		return self.angle_a_to_b(theta, WORLD_FRAME, VMAP_FRAME)
 
 	def get_pose(self, msg = None):
 		if msg is None:

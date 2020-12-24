@@ -294,6 +294,16 @@ class test:
 		assert self.dist(p, [0, 0]) < rough_eps_d / 2, "Failed to mark the vmap!"
 		self.my_log.loginfo("Test: Mark the new vmap successfully!")
 
+	def test_tf(self):
+		BASE_FRAME = rospy.get_param("base_frame")
+		self.my_log.loginfo("Test: TF transform test!")
+		assert self.tr.listener.canTransform('/' + VMAP_FRAME, '/' + BASE_FRAME, rospy.Time()), "/vmap frame and /odom cannot transform!"
+		self.my_log.loginfo("Test: TF transform between vmap and odom test pass!")
+		assert self.tr.listener.canTransform('/' + VMAP_FRAME, '/' + ROBOT_FRAME, rospy.Time()), "/vmap frame and /base_link cannot transform!"
+		self.my_log.loginfo("Test: TF transform between vmap and base_link test pass!")
+		assert self.tr.listener.canTransform('/' + BASE_FRAME, '/' + ROBOT_FRAME, rospy.Time()), "/odom frame and /base_link cannot transform!"
+		self.my_log.loginfo("Test: TF transform between odom and base_link test pass!")
+
 	def test_experiment(self):
 		####################################################################
 		#   Initial Status Test
@@ -304,13 +314,7 @@ class test:
 		####################################################################
 		#   TF Transform Test
 		####################################################################
-		self.my_log.loginfo("Test: TF transform test!")
-		assert self.tr.listener.canTransform('/vmap', '/odom', rospy.Time()), "/vmap frame and /odom cannot transform!"
-		self.my_log.loginfo("Test: TF transform between vmap and odom test pass!")
-		assert self.tr.listener.canTransform('/vmap', '/base_link', rospy.Time()), "/vmap frame and /base_link cannot transform!"
-		self.my_log.loginfo("Test: TF transform between vmap and base_link test pass!")
-		assert self.tr.listener.canTransform('/odom', '/base_link', rospy.Time()), "/odom frame and /base_link cannot transform!"
-		self.my_log.loginfo("Test: TF transform between odom and base_link test pass!")
+		self.test_tf()
 		
 		####################################################################
 		#   Start Exp Test
@@ -385,13 +389,7 @@ class test:
 		####################################################################
 		#   TF Transform Test
 		####################################################################
-		self.my_log.loginfo("Test: TF transform test!")
-		assert self.tr.listener.canTransform('/vmap', '/odom', rospy.Time()), "/vmap frame and /odom cannot transform!"
-		self.my_log.loginfo("Test: TF transform between vmap and odom test pass!")
-		assert self.tr.listener.canTransform('/vmap', '/base_link', rospy.Time()), "/vmap frame and /base_link cannot transform!"
-		self.my_log.loginfo("Test: TF transform between vmap and base_link test pass!")
-		assert self.tr.listener.canTransform('/odom', '/base_link', rospy.Time()), "/odom frame and /base_link cannot transform!"
-		self.my_log.loginfo("Test: TF transform between odom and base_link test pass!")
+		self.test_tf()
 		
 		####################################################################
 		#	Before starting Exp:

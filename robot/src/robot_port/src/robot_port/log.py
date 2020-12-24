@@ -14,6 +14,11 @@ class log:
 		self.w_log = write_log()
 
 	def loginfo(self, string, *args):
+		if isinstance(string, list):
+			for s in string:
+				self.loginfo(s)
+			return
+		assert isinstance(string, str), "Argument string is not the type of str!"
 		string = string%args
 		if self.if_pub:
 			self.log_pub.publish("[INFO] " + string)
@@ -21,6 +26,7 @@ class log:
 		rospy.loginfo(string)
 
 	def logwarn(self, string, *args):
+		assert isinstance(string, str), "Argument string is not the type of str!"
 		string = string%args
 		if self.if_pub:
 			self.log_pub.publish("[WARN] " + string)
@@ -28,6 +34,7 @@ class log:
 		rospy.logwarn(string)
 
 	def logerr(self, string, *args):
+		assert isinstance(string, str), "Argument string is not the type of str!"
 		string = string%args
 		if self.if_pub:
 			self.log_pub.publish("[ERROR] " + string)
@@ -37,7 +44,11 @@ class log:
 class write_log:
 	def __init__(self):
 		import os
-		self.path = os.path.dirname(os.path.realpath(__file__)) + "/log"
+		if rospy.has_param("pkg_path"):
+			self.path = rospy.get_param("pkg_path")
+		else:
+			self.path = os.path.dirname(os.path.realpath(__file__))
+		self.path += "/log"
 		if not os.path.exists(self.path):
 			os.makedirs(self.path)
 		start_time = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())

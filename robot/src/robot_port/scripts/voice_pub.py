@@ -14,7 +14,7 @@ def receive_voice(msg):
 	cmd = msg.data
 	cmd.rstrip()
 	for s in illegal_char:
-		cmd.replace(s, "")
+		cmd = re.sub(s, "", cmd)
 	if not cmd in cmd_list:
 		return
 	my_log.loginfo(cmd)
@@ -27,6 +27,7 @@ def init():
 	global my_log
 	my_log = log(if_pub = False)
 	rospy.Subscriber('xfspeech', String, receive_voice)
+	my_log.loginfo("Voice_pub: Voice Publisher Initialized!")
 
 
 if __name__ == '__main__':

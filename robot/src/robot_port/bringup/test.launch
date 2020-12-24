@@ -4,6 +4,7 @@
     <param name="exp_status" value="waiting"/>
     <param name="TEST_MODE" value="True"/>
     <param name="connected" value="False"/>
+    <param name="pkg_path" value="$(find robot_port)"/>
     <rosparam param="user_posi" >[-30, 60]</rosparam>
 
     <node pkg="robot_port" name="total" type="total_log.py" output="screen" />

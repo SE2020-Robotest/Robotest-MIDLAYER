@@ -26,6 +26,7 @@ def pub():
 	tr = trans()
 	rb_s = rb()
 	my_log = log()
+	my_log.loginfo("Posi_publisher: Posi Publisher Initialized!")
 	rate = rospy.Rate(10)
 	while not rospy.is_shutdown():
 		connected = bool(rospy.get_param("connected"))

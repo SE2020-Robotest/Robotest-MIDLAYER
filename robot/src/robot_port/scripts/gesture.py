@@ -13,6 +13,8 @@ from sensor_msgs.msg import PointCloud2, Image, CameraInfo
 from sensor_msgs import point_cloud2
 from robot_port.msg import voice_cmd
 from robot_port.msg import Frame
+from robot_port.msg import point_2d
+from robot_port.msg import response
 from roslib import message
 
 '''
@@ -43,18 +45,38 @@ class recognition_data:
 
 	def save(self, data, name):
 		raw_data = pickle.dumps(data)
-		with open(self.path + "/%s/"%self.num + name + ".data", "wb") as f:
+		with open(self.path + name + ".data", "wb") as f:
 			f.write(cl_img)
+
+	def read(self, name):
+		with open(self.path + name + ".data", "wb") as f:
+			data = pockle.loads(f)
+			return data
+
+	def save_camera_info(self, depth_camera, color_camera):
+		self.save(depth_camera, "/depth_camera")
+		self.save(color_camera, "/color_camera")
 
 	def save_recognition_data(self, depth_image, color_image, frame):
 		self.num += 1
-		self.save(depth_image, "depth_image")
-		self.save(color_image, "color_image")
-		self.save(frame, "frame")
+		self.save(depth_image, "/%s/depth_image"%self.num)
+		self.save(color_image, "/%s/color_image"%self.num)
+		self.save(frame, "/%s/frame"%self.num)
 
-	def read_recognition_data(self, num):
-		
-		return
+	def read_camera_info(self):
+		depth_camera = CameraInfo(self.read("/depth_camera"))
+		color_camera = CameraInfo(self.read("/color_camera"))
+		return (depth_camera, color_camera)
+
+	def read_recognition_data(self, num = 1):
+		try:
+			depth_image = Image(self.read("/%s/depth_image"%num))
+			color_image = Image(self.read("/%s/color_image"%num))
+			frame = Frame(self.read("/%s/frame"%num))
+		except IOError as e:
+			print e
+			return
+		return (depth_image, color_image, frame)
 
 class gesture_recognize:
 	def __init__(self, my_log = None):
@@ -63,10 +85,18 @@ class gesture_recognize:
 		self.radio_y = 0
 		self.tr = trans()
 		self.camera_frame_id = ""
+		self.transformation = None
+		self.recognizing = False
 		self.my_log = my_log
 
-	def set_depth_image(self, depth_image):
-		self.convert.set_depth_image(depth_image)
+	def start_recognizing(self, depth_image):
+		if self.is_set() and depth_image is not None and (not self.recognizing):
+			self.convert.set_depth_image(depth_image)
+			self.transformation = self.tr.get_transformation(self.camera_frame_id, VMAP_FRAME, depth_image.header.stamp)
+			self.recognizing = True
+			return True
+		else:
+			return False
 
 	def set_camera_info(self, camera_info):
 		self.convert.set_camera_info(camera_info)
@@ -102,7 +132,7 @@ class gesture_recognize:
 		return
 
 	def point_camera_to_vmap(self, p_camera):
-		return self.tr.point_a_to_b(self.camera_frame_id, VMAP_FRAME, p_camera)
+		return self.tr.point_a_to_b(p_camera[0], p_camera[1], p_camera[2], self.transformation)
 
 	def compute_dst(self, p, q):
 		assert abs(p[2] - q[2]) > 0.0001, "Cannot compute the intersection properly!"
@@ -112,6 +142,8 @@ class gesture_recognize:
 		return dst
 
 	def recognize(self, person):
+		if not self.recognizing:
+			return []
 		right_shoulder = person.bodyParts[2]
 		right_hand = person.bodyParts[4]
 		p_right_shoulder_camera = self.get_3d_of_body_part(right_shoulder)
@@ -124,6 +156,7 @@ class gesture_recognize:
 				print "Gesture: Cannot transform the key point to vmap!\nDetails: %s"%e
 			else:
 				self.my_log.logerr("Gesture: Cannot transform the key point to vmap!\nDetails: %s", e)
+			self.recognizing = False
 			return []
 		try:
 			dst = self.compute_dst(p_right_shoulder, p_right_hand)
@@ -132,7 +165,9 @@ class gesture_recognize:
 				print "Gesture: Error: %s"%e
 			else:
 				self.my_log.logerr("Gesture: %s", e)
+			self.recognizing = False
 			return []
+		self.recognizing = False
 		return [p_right_shoulder, p_right_hand, dst]
 
 class Gesture:
@@ -140,21 +175,45 @@ class Gesture:
 		rospy.init_node('gesture', anonymous = False)
 
 		self.my_log = log()
-		self.gesture_recognizer = gesture_recognize()
-		self.exp = exp()
 
-		import os
-		if rospy.has_param("pkg_path"):
-			path = rospy.get_param("pkg_path")
+		rospy.Subscriber('voice_cmd', voice_cmd, self.receive_voice)
+		self.dst_pub = rospy.Publisher('dst', point_2d, queue_size = 1)
+		self.response_pub = rospy.Publisher('response', response, queue_size = 10)
+
+		global TEST_MODE
+		TEST_MODE = bool(rospy.get_param("TEST_MODE"))
+		if TEST_MODE:
+			path = rospy.get_param("pkg_path") + "/data/test"
+			self.save_data = recognition_data(path)
+			(depth_camera, color_camera) = self.save_data.read_camera_info()
+			self.receive_depth_camera_info(depth_camera)
+			self.receive_color_camera_info(color_camera)
+			(depth_image, color_image, frame) = self.save_data.read_recognition_data()
+			self.receive_depth_image(depth_image)
+			self.receive_color_image(color_image)
+			self.test_frame = frame
 		else:
-			path = os.path.dirname(os.path.realpath(__file__))
-		path += "/data"
-		if not os.path.exists(path):
-			os.makedirs(path)
-		path += "/" + rospy.get_param("start_time")
-		if not os.path.exists(path):
-			os.makedirs(path)
-		self.save_data = recognition_data(path)
+			import os
+			if rospy.has_param("pkg_path"):
+				path = rospy.get_param("pkg_path")
+			else:
+				path = os.path.dirname(os.path.realpath(__file__))
+			path += "/data"
+			if not os.path.exists(path):
+				os.makedirs(path)
+			path += "/" + rospy.get_param("start_time")
+			if not os.path.exists(path):
+				os.makedirs(path)
+			self.gesture_recognizer = gesture_recognize()
+			self.color_image_pub = rospy.Publisher('/camera/color/image_raw/my_pub', Image, queue_size = 1)
+			self.depth_image_pub = rospy.Publisher('/camera/depth/image_raw/my_pub', Image, queue_size = 1)
+			rospy.Subscriber('/camera/color/image_raw', Image, self.receive_color_image)
+			rospy.Subscriber('/camera/depth/image_raw', Image, self.receive_depth_image)
+			self.dp_info_sub = rospy.Subscriber('/camera/depth/camera_info', CameraInfo, self.receive_depth_camera_info)
+			self.cl_info_sub = rospy.Subscriber('/camera/color/camera_info', CameraInfo, self.receive_color_camera_info)
+			rospy.Subscriber('/frame', Frame, self.receive_frame)
+
+		self.exp = exp()
 
 		self.is_color_cemera_set = False
 		self.is_depth_cemera_set = False
@@ -162,20 +221,14 @@ class Gesture:
 		self.color_image = None
 		self.depth_image = None
 		self.depth_point_cloud = None
-
-		self.color_image_pub = rospy.Publisher('/camera/color/image_raw/my_pub', Image, queue_size = 1)
-		self.depth_image_pub = rospy.Publisher('/camera/depth/image_raw/my_pub', Image, queue_size = 1)
-		rospy.Subscriber('voice_cmd', voice_cmd, self.receive_voice)
-		rospy.Subscriber('/camera/color/image_raw', Image, self.receive_color_image)
-		rospy.Subscriber('/camera/depth/image_raw', Image, self.receive_depth_image)
-		rospy.Subscriber('/camera/depth/camera_info', CameraInfo, self.receive_depth_camera_info)
-		rospy.Subscriber('/camera/color/camera_info', CameraInfo, self.receive_color_camera_info)
-		rospy.Subscriber('/frame', Frame, self.receive_frame)
 		
 		self.my_log.loginfo("Gesture: Gesture Node Initialized!")
 
 	def start(self):
 		rospy.spin()
+
+	def response(self, discription, response):
+		self.response_pub.publish(rospy.Time.now().to_sec(), "Gesture", discription, response)
 
 	def is_set(self):
 		return self.is_depth_cemera_set and self.is_color_cemera_set
@@ -184,8 +237,13 @@ class Gesture:
 		radio_x = float(self.depth_camera_info.width) / float(self.color_camera_info.width)
 		radio_y = float(self.depth_camera_info.height) / float(self.color_camera_info.height)
 		self.gesture_recognizer.set_radio(radio_x, radio_y)
+		self.save_data.save_camera_info(self.depth_camera_info, self.color_camera_info)
+		self.dp_info_sub.unregister(CameraInfo)
+		self.cl_info_sub.unregister(CameraInfo)
 		del self.depth_camera_info
 		del self.color_camera_info
+		del self.dp_info_sub
+		del self.cl_info_sub
 
 	def receive_voice(self, msg):
 		cmd = msg.cmd
@@ -193,11 +251,13 @@ class Gesture:
 			if not self.exp.Recog():
 				self.my_log.logerr("Gesture: Cannot recognize now!")
 				return
-			if self.image_pub():
-				self.gesture_recognizer.set_depth_image(self.depth_image)
+			if self.image_pub() and self.gesture_recognizer.start_recognizing(self.depth_image):
 				self.my_log.loginfo("Gesture: Published the image")
 			else:
 				self.exp.Wait()
+				if TEST_MODE:
+					rospy.sleep(5)
+					self.receive_frame(self.frame)
 
 	def receive_depth_camera_info(self, data):
 		if not self.is_depth_cemera_set:
@@ -228,7 +288,7 @@ class Gesture:
 		persons = data.persons
 		if len(persons) == 0:
 			self.my_log.logerr("Gesture: No person detected!")
-			self.recognizing = False
+			self.response("No person detected!", False)
 			return
 		elif len(persons) > 1:
 			self.my_log.logwarn("Gesture: More than one person detected!")
@@ -240,15 +300,21 @@ class Gesture:
 		if len(p) == 3:
 			[p_right_shoulder, p_right_hand, dst] = p
 			self.my_log.loginfo("The right shoulder is %s, right hand is %s. The destination is %s", p_right_shoulder, p_right_hand, dst)
+			self.exp.Wait()
+			self.dst_pub.publish(dst[0], dst[1])
+			self.response("", True)
 		elif 0 < len(p):
 			self.my_log.logerr("Gesture: The number of feedback is wrong!")
-		self.exp.Wait()
+			self.exp.Wait()
+			self.response("The number of feedback is wrong!", False)
 		return
 
 	def image_pub(self):
 		if self.color_image is None or self.color_image is None:
 			self.my_log.logerr("Gesture: No image received!")
 			return False
+		if TEST_MODE:
+			return True
 		self.color_image_pub.publish(self.color_image)
 		self.depth_image_pub.publish(self.depth_image)
 		return True

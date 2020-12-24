@@ -46,23 +46,43 @@ class trans:
 			return
 		return msg
 
-	def point_a_to_b(self, frame_a, frame_b, x, y, z):
-		"Transform the coordinates of a point in frame_a into frame_b."
-		(trans,rot) = self.listener.lookupTransform("/" + frame_b, "/" + frame_a, rospy.Time(0))
+	def get_transformation(self, frame_a, frame_b, time = None):
+		if time is None:
+			time = rospy.Time(0)
+		return self.listener.lookupTransform("/" + frame_b, "/" + frame_a, time)
+
+	def point_a_to_b(self, x, y, z, *args):
+		"Transform the coordinates of a point. You can give two frame_id, and stamp is optional. Also, you can give the transformation directly."
+		if len(args) in [2, 3]:
+			(trans, rot) = self.get_transformation(*args)
+		elif len(args) == 1:
+			(trans, rot) = args[0]
+		else:
+			raise Exception("The number of arguments is wrong!")
 		[x, y, z] = self.rotate(x, y, z, rot)
 		x += trans[0]
 		y += trans[1]
 		z += trans[2]
 		return [x, y, z]
 
-	def vector_a_to_b(self, frame_a, frame_b, x, y, z):
-		"Transform the coordinates of a vector in frame_a into frame_b. Vector just need to be rotated."
-		(trans,rot) = self.listener.lookupTransform("/" + frame_b, "/" + frame_a, rospy.Time(0))
+	def vector_a_to_b(self, x, y, z, *args):
+		"Transform the coordinates of a vector. You can give two frame_id, and stamp is optional. Also, you can give the transformation directly."
+		if len(args) in [2, 3]:
+			(trans, rot) = self.get_transformation(*args)
+		elif len(args) == 1:
+			(trans, rot) = args[0]
+		else:
+			raise Exception("The number of arguments is wrong!")
 		return self.rotate(x, y, z, rot)
 
-	def angle_a_to_b(self, frame_a, frame_b, theta):
-		"Transform the coordinates of a vector in frame_a into frame_b. Vector just need to be rotated."
-		(trans,rot) = self.listener.lookupTransform("/" + frame_b, "/" + frame_a, rospy.Time(0))
+	def angle_a_to_b(self, theta, *args):
+		"You can give two frame_id, and stamp is optional. Also, you can give the transformation directly."
+		if len(args) in [2, 3]:
+			(trans, rot) = self.get_transformation(*args)
+		elif len(args) == 1:
+			(trans, rot) = args[0]
+		else:
+			raise Exception("The number of arguments is wrong!")
 		theta += self.quat_to_angle(rot)
 		return self.normalize_angle(theta)
 
@@ -73,7 +93,7 @@ class trans:
 		py = msg.pose.pose.position.y
 		pz = msg.pose.pose.position.z
 		WORLD_FRAME = msg.header.frame_id
-		[px, py, pz] = self.point_a_to_b(WORLD_FRAME, VMAP_FRAME, px, py, pz)
+		[px, py, pz] = self.point_a_to_b(px, py, pz, WORLD_FRAME, VMAP_FRAME, msg.header.stamp)
 		return [100 * px, 100 * py]
 
 	def get_velocity(self, msg = None):
@@ -83,7 +103,7 @@ class trans:
 		vy = msg.twist.twist.linear.y
 		vz = msg.twist.twist.linear.z
 		WORLD_FRAME = msg.header.frame_id
-		[vx, vy, vz] = self.vector_a_to_b(WORLD_FRAME, VMAP_FRAME, vx, vy, vz)
+		[vx, vy, vz] = self.vector_a_to_b(vx, vy, vz, WORLD_FRAME, VMAP_FRAME, msg.header.stamp)
 		return [100 * vx, 100 * vy]
 
 	def get_angle(self, msg = None):
@@ -91,7 +111,7 @@ class trans:
 			msg = self.get_msg()
 		theta = self.quat_to_angle([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, \
 								msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
-		return self.angle_a_to_b(WORLD_FRAME, VMAP_FRAME, theta)
+		return self.angle_a_to_b(theta, WORLD_FRAME, VMAP_FRAME, msg.header.stamp)
 
 	def get_pose(self, msg = None):
 		if msg is None:

@@ -1,0 +1,13 @@
+sudo gedit /etc/X11/app-defaults/XTerm
+
+add:
+
+Xft.dpi: 96
+xpdf.title: PDF
+Xft.antialias: true
+Xft.rgba: rgb
+Xft.hinting: true
+Xft.hintstyle: hintslight 
+xterm*scrollBar: true
+xterm*rightScrollBar: true
+xterm*faceName: DejaVu Sans Mono:antialias=True:pixelsize=15

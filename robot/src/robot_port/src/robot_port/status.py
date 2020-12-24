@@ -40,7 +40,7 @@ class rb:
 
 class exp:
 	wait = "waiting"
-	recog = "recogniting"
+	recog = "recognizing"
 	move = "moving"
 
 	def __init__(self):
